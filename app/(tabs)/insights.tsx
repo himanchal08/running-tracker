@@ -24,6 +24,7 @@ import {
 import {
   computePeriodStats,
   getWeekWindows,
+  getMonthWindows,
   computeTrends,
   generateTrendInsight,
   getDayOfWeekDistribution,
@@ -50,7 +51,7 @@ const GH = {
   yellow: '#d29922',
 };
 
-const PERIOD_OPTIONS = ['4 weeks', '12 weeks'] as const;
+const PERIOD_OPTIONS = ['4 weeks', '12 weeks', '6 months', '1 year'] as const;
 type PeriodOption = typeof PERIOD_OPTIONS[number];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -83,8 +84,8 @@ function MetricTile({
   );
 }
 
-function TrendCard({ trend }: { trend: TrendResult }) {
-  const insight = generateTrendInsight(trend);
+function TrendCard({ trend, periodLabel }: { trend: TrendResult; periodLabel: 'week' | 'month' }) {
+  const insight = generateTrendInsight(trend, periodLabel);
   if (!insight) return null;
   const color = trend.direction === 'up' ? GH.greenBright : GH.red;
   const arrow = trend.direction === 'up' ? '↑' : '↓';
@@ -140,8 +141,11 @@ export default function InsightsScreen() {
   const delta = computeWeekDelta(thisWeek, lastWeek);
   const summary = generateWeeklySummary(thisWeek, delta);
 
-  const weekWindows = getWeekWindows(weekCount);
-  const periodStats = weekWindows.map((w) =>
+  const isMonthMode = periodOption === '6 months' || periodOption === '1 year';
+  const windowCount = periodOption === '4 weeks' ? 4 : periodOption === '12 weeks' ? 12 : periodOption === '6 months' ? 6 : 12;
+
+  const windows = isMonthMode ? getMonthWindows(windowCount) : getWeekWindows(windowCount);
+  const periodStats = windows.map((w) =>
     computePeriodStats(activities, w.start, w.end),
   );
   const trends = computeTrends(periodStats);
@@ -259,7 +263,7 @@ export default function InsightsScreen() {
             </Text>
           </View>
         ) : (
-          trends.map((t) => <TrendCard key={t.metric} trend={t} />)
+          trends.map((t) => <TrendCard key={t.metric} trend={t} periodLabel={isMonthMode ? 'month' : 'week'} />)
         )}
       </View>
 

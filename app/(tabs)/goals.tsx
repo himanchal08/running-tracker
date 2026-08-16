@@ -198,9 +198,8 @@ export default function GoalsScreen() {
                 key={pr.id}
                 style={styles.prTile}
                 onPress={() => {
-                  if (pr.activityId) router.push(`/activity/${pr.activityId}`);
+                  router.push(`/pr-history?category=${pr.category}` as any);
                 }}
-                disabled={!pr.activityId}
               >
                 <Text style={styles.prLabel}>{label}</Text>
                 <Text style={styles.prValue}>{formatPrValue(pr.category, pr.value)}</Text>

@@ -83,6 +83,18 @@ export function getWeekWindows(n: number, referenceDate = new Date()): WeekWindo
   return windows;
 }
 
+export function getMonthWindows(n: number, referenceDate = new Date()): WeekWindow[] {
+  const windows: WeekWindow[] = [];
+  const ref = new Date(referenceDate);
+
+  for (let i = 0; i < n; i++) {
+    const start = new Date(ref.getFullYear(), ref.getMonth() - i, 1);
+    const end = new Date(ref.getFullYear(), ref.getMonth() - i + 1, 0, 23, 59, 59, 999);
+    windows.unshift({ start, end });
+  }
+  return windows;
+}
+
 export interface TrendResult {
   metric: string;
   slope: number;
@@ -143,14 +155,14 @@ export function computeTrends(periodStats: PeriodStats[]): TrendResult[] {
   });
 }
 
-export function generateTrendInsight(trend: TrendResult): string | null {
+export function generateTrendInsight(trend: TrendResult, periodLabel: 'week' | 'month' = 'week'): string | null {
   if (!trend.isSignificant) return null;
   const rounded = Math.abs(trend.slope).toFixed(1);
   if (trend.direction === 'up') {
-    return `Your ${trend.metric.toLowerCase()} is trending up (+${rounded} ${trend.unit}/week).`;
+    return `Your ${trend.metric.toLowerCase()} is trending up (+${rounded} ${trend.unit}/${periodLabel}).`;
   }
   if (trend.direction === 'down') {
-    return `Your ${trend.metric.toLowerCase()} is trending down (-${rounded} ${trend.unit}/week).`;
+    return `Your ${trend.metric.toLowerCase()} is trending down (-${rounded} ${trend.unit}/${periodLabel}).`;
   }
   return null;
 }

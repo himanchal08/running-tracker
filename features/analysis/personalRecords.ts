@@ -25,7 +25,7 @@ export const PR_LABELS: Record<PRCategory, string> = {
   most_elevation:   'Most elevation in one activity',
 };
 
-const DISTANCE_CATEGORIES: { category: PRCategory; distanceM: number }[] = [
+export const DISTANCE_CATEGORIES: { category: PRCategory; distanceM: number }[] = [
   { category: 'fastest_1k',       distanceM: 1_000 },
   { category: 'fastest_3k',       distanceM: 3_000 },
   { category: 'fastest_5k',       distanceM: 5_000 },
@@ -34,7 +34,7 @@ const DISTANCE_CATEGORIES: { category: PRCategory; distanceM: number }[] = [
   { category: 'fastest_marathon', distanceM: 42_195 },
 ];
 
-const TIME_EFFORT_CATEGORIES: { category: PRCategory; windowS: number }[] = [
+export const TIME_EFFORT_CATEGORIES: { category: PRCategory; windowS: number }[] = [
   { category: 'fastest_30min', windowS: 30 * 60 },
   { category: 'fastest_60min', windowS: 60 * 60 },
 ];
