@@ -151,7 +151,20 @@ export default function HistoryScreen() {
           onPress={() => router.push(`/activity/${item.id}`)}
         />
       )}
-      ListHeaderComponent={<ActivityHeatmap activities={activities} />}
+      ListHeaderComponent={
+        <>
+          <ActivityHeatmap activities={activities} />
+          <TouchableOpacity
+            style={styles.routesEntryBtn}
+            onPress={() => router.push('/routes' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="View all my recognized routes"
+          >
+            <Text style={styles.routesEntryText}>🗺  My Routes</Text>
+            <Text style={styles.routesEntryChevron}>›</Text>
+          </TouchableOpacity>
+        </>
+      }
       ListEmptyComponent={<EmptyHistory />}
       contentContainerStyle={[
         styles.listContent,
@@ -277,5 +290,27 @@ const styles = StyleSheet.create({
     color: GH.muted,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  routesEntryBtn: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: GH.surface,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: GH.border,
+  },
+  routesEntryText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: GH.blue,
+  },
+  routesEntryChevron: {
+    fontSize: 20,
+    color: GH.muted,
   },
 });

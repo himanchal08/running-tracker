@@ -6,12 +6,24 @@ import { IngestionPipeline } from './ingestion/pipeline';
 import type { RawPoint } from './ingestion/types';
 import { DEFAULT_INGESTION_CONFIG } from './ingestion/types';
 import { getDb } from '../../db/client';
-import { insertPoint } from '../../db/queries/points';
+import { insertPoint, getPointsForActivity } from '../../db/queries/points';
 import {
   updateActivityLiveStats,
   finaliseActivity,
   autoUpdateActivityType,
 } from '../../db/queries/activities';
+import {
+  getAllRouteCandidates,
+  upsertRoute,
+  saveRouteAttempt,
+  listAttemptsForRoute,
+} from '../../db/queries/routes';
+import {
+  extractEndpoints,
+  buildCanonicalPolyline,
+  matchRoute,
+} from '../routes/routeMatcher';
+import { getBestAttempt } from '../routes/routeAnalytics';
 import { useRecordingStore } from '../../store/recordingStore';
 
 let _pipeline: IngestionPipeline | null = null;
@@ -182,6 +194,8 @@ export async function stopRecording(): Promise<void> {
     },
   );
 
+  const savedActivityId = _activeActivityId;
+
   _pipeline.reset();
   _pipeline = null;
   _activeActivityId = null;
@@ -189,4 +203,47 @@ export async function stopRecording(): Promise<void> {
   _acceptedPoints = 0;
 
   useRecordingStore.getState().reset();
+
+  if (savedActivityId) {
+    try {
+      await runRouteMatching(db, savedActivityId);
+    } catch (err) {
+      console.error('[locationService] runRouteMatching failed:', err);
+    }
+  }
+}
+
+async function runRouteMatching(db: ReturnType<typeof getDb>, activityId: string): Promise<void> {
+  const pts = await getPointsForActivity(db, activityId);
+  if (pts.length < 10) return;
+
+  const endpoints = extractEndpoints(pts);
+  if (!endpoints) return;
+
+  const candidates = await getAllRouteCandidates(db);
+  const matchedRouteId = matchRoute(endpoints, candidates);
+
+  if (matchedRouteId) {
+    const existingAttempts = await listAttemptsForRoute(db, matchedRouteId);
+    const best = getBestAttempt(existingAttempts);
+    const activity = await import('../../db/queries/activities').then((m) => m.getActivity(db, activityId));
+    let deltaVsBestS: number | null = null;
+    if (best && activity) {
+      deltaVsBestS = activity.movingTimeS - best.activity.movingTimeS;
+    }
+    await upsertRoute(db, {
+      id: matchedRouteId,
+      canonicalPolyline: candidates.find((c) => c.id === matchedRouteId)!.canonicalPolyline,
+      firstSeenAt: new Date(),
+    });
+    await saveRouteAttempt(db, { routeId: matchedRouteId, activityId, deltaVsBestS });
+  } else {
+    const activity = await import('../../db/queries/activities').then((m) => m.getActivity(db, activityId));
+    if (!activity || activity.distanceM < 500) return;
+
+    const routeId = activityId;
+    const polyline = buildCanonicalPolyline(pts);
+    await upsertRoute(db, { id: routeId, canonicalPolyline: polyline, firstSeenAt: new Date() });
+    await saveRouteAttempt(db, { routeId, activityId, deltaVsBestS: null });
+  }
 }

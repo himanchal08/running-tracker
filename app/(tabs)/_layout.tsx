@@ -103,9 +103,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="weekly"
+        name="insights"
         options={{
-          title: 'Weekly',
+          title: 'Insights',
           tabBarIcon: ({ color }) => <WeeklyIcon color={color} />,
         }}
       />

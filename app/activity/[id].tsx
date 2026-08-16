@@ -30,6 +30,7 @@ import {
 } from '../../features/tracking/utils/formatters';
 import { detectPRs, PR_LABELS, type PRCategory, type NewPR } from '../../features/analysis/personalRecords';
 import { listPRs, savePRIfBetter } from '../../db/queries/personalRecords';
+import { listAttemptsForRoute } from '../../db/queries/routes';
 
 const GH = {
   bg: '#0d1117',
@@ -72,6 +73,7 @@ export default function ActivityDetailScreen() {
   const [activity, setActivity] = useState<Activity | null>(null);
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState(true);
+  const [routeId, setRouteId] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [newPRs, setNewPRs] = useState<NewPR[]>([]);
 
@@ -99,6 +101,21 @@ export default function ActivityDetailScreen() {
           }
         } catch (prErr) {
           console.error('[ActivityDetail] PR detection failed:', prErr);
+        }
+
+        try {
+          const { listRoutes } = await import('../../db/queries/routes');
+          const allRoutes = await listRoutes(db);
+          for (const candidate of allRoutes) {
+            const attempts = await listAttemptsForRoute(db, candidate.id);
+            const hit = attempts.find((a) => a.activity.id === id);
+            if (hit) {
+              setRouteId(candidate.id);
+              break;
+            }
+          }
+        } catch (_routeErr) {
+          // route lookup is best-effort
         }
       }
     } catch (err) {
@@ -265,6 +282,17 @@ export default function ActivityDetailScreen() {
         )}
       </SectionCard>
 
+      {routeId && (
+        <TouchableOpacity
+          style={styles.routeButton}
+          onPress={() => router.push(`/route/${routeId}` as any)}
+          accessibilityRole="button"
+          accessibilityLabel="View route history"
+        >
+          <Text style={styles.routeButtonText}>🗺 View Route History</Text>
+        </TouchableOpacity>
+      )}
+
       <TouchableOpacity
         style={styles.deleteButton}
         onPress={handleDelete}
@@ -414,6 +442,20 @@ const styles = StyleSheet.create({
   },
   statRowValueAccent: {
     color: GH.greenBright,
+  },
+  routeButton: {
+    marginTop: 8,
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: GH.border,
+    alignItems: 'center',
+    backgroundColor: GH.surface,
+  },
+  routeButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: GH.blue,
   },
   deleteButton: {
     marginTop: 8,
