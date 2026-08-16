@@ -43,6 +43,7 @@
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
     "@types/react-test-renderer": "~19.0.0",
+    "ajv": "^8.20.0",
     "babel-plugin-inline-import": "^3.0.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^8.0.0",
