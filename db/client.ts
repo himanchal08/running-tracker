@@ -12,6 +12,10 @@ export function getDb() {
   if (_db) return _db;
 
   const opsqlite = open({ name: 'movement_tracker.db' });
+  opsqlite.execute('PRAGMA journal_mode = WAL;');
+  opsqlite.execute('PRAGMA busy_timeout = 5000;');
+  opsqlite.execute('PRAGMA synchronous = NORMAL;');
+  
   _db = drizzle(opsqlite, { schema });
   migrate(_db, migrations);
   return _db;
