@@ -1,5 +1,6 @@
 import BackgroundGeolocation, {
   type Location,
+  type MotionActivityEvent,
 } from 'react-native-background-geolocation';
 import { IngestionPipeline } from './ingestion/pipeline';
 import type { RawPoint } from './ingestion/types';
@@ -9,6 +10,7 @@ import { insertPoint } from '../../db/queries/points';
 import {
   updateActivityLiveStats,
   finaliseActivity,
+  autoUpdateActivityType,
 } from '../../db/queries/activities';
 import { useRecordingStore } from '../../store/recordingStore';
 
@@ -86,6 +88,26 @@ async function onLocation(location: Location): Promise<void> {
   });
 }
 
+async function onActivityChange(event: MotionActivityEvent): Promise<void> {
+  if (!_activeActivityId) return;
+
+  const { activity } = event; // 'in_vehicle', 'on_bicycle', 'on_foot', 'running', 'still', 'walking', 'unknown'
+  let type: 'walking' | 'running' | 'cycling' | 'hiking' | 'unknown' = 'unknown';
+
+  if (activity === 'running') type = 'running';
+  else if (activity === 'walking' || activity === 'on_foot') type = 'walking';
+  else if (activity === 'on_bicycle') type = 'cycling';
+
+  if (type !== 'unknown') {
+    try {
+      const db = getDb();
+      await autoUpdateActivityType(db, _activeActivityId, type);
+    } catch (err) {
+      console.error('[locationService] autoUpdateActivityType failed:', err);
+    }
+  }
+}
+
 export async function startRecording(activityId: string): Promise<void> {
   _pipeline = new IngestionPipeline(DEFAULT_INGESTION_CONFIG);
   _activeActivityId = activityId;
@@ -107,6 +129,7 @@ export async function startRecording(activityId: string): Promise<void> {
   });
 
   BackgroundGeolocation.onLocation(onLocation);
+  BackgroundGeolocation.onActivityChange(onActivityChange);
   await BackgroundGeolocation.start();
 
   useRecordingStore.getState().setStatus('recording', activityId);

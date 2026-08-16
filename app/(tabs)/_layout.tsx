@@ -45,19 +45,19 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="history"
-        options={{
-          title: 'History',
-          tabBarIcon: ({ color }) => <HistoryIcon color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="record"
         options={{
           title: 'Record',
           tabBarIcon: ({ color, focused }) => (
             <RecordIcon color={color} focused={focused} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color }) => <HistoryIcon color={color} />,
         }}
       />
     </Tabs>

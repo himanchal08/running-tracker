@@ -1,5 +1,7 @@
-import { registerRootComponent } from 'expo';
+// Polyfill window.location for expo-router's Sitemap component in native contexts
+if (typeof window !== 'undefined' && !window.location) {
+  // @ts-expect-error - native polyfill
+  window.location = { origin: 'native://app' };
+}
 
-import App from './App';
-
-registerRootComponent(App);
+import 'expo-router/entry';

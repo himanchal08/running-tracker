@@ -89,10 +89,6 @@ export default function RecordScreen() {
     liveGpsAccuracyM,
   } = useRecordingStore();
 
-  const [activityType, setActivityType] = useState<
-    'walking' | 'running' | 'cycling' | 'hiking'
-  >('running');
-
   const livePace = computePaceSecPerUnit(liveDistanceM, liveMovingTimeS);
 
   const handleStart = useCallback(async () => {
@@ -101,7 +97,7 @@ export default function RecordScreen() {
     try {
       await insertActivity(db, {
         id: activityId,
-        type: activityType,
+        type: 'unknown',
         startedAt: new Date(),
         distanceM: 0,
         movingTimeS: 0,
@@ -115,7 +111,7 @@ export default function RecordScreen() {
       Alert.alert('Error', 'Could not start recording. Check location permissions.');
       console.error('[RecordScreen] startRecording failed:', err);
     }
-  }, [activityType]);
+  }, []);
 
   const handlePause = useCallback(async () => {
     try { await pauseRecording(); } catch (err) {
@@ -153,32 +149,8 @@ export default function RecordScreen() {
     return (
       <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
         <View style={styles.idleContainer}>
-          <Text style={styles.idleTitle}>What are you doing?</Text>
-
-          <View style={styles.typeGrid}>
-            {(
-              [
-                { type: 'running', emoji: '🏃', label: 'Run' },
-                { type: 'walking', emoji: '🚶', label: 'Walk' },
-                { type: 'cycling', emoji: '🚴', label: 'Ride' },
-                { type: 'hiking', emoji: '🥾', label: 'Hike' },
-              ] as const
-            ).map(({ type, emoji, label }) => (
-              <TouchableOpacity
-                key={type}
-                style={[styles.typeButton, activityType === type && styles.typeButtonActive]}
-                onPress={() => setActivityType(type)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: activityType === type }}
-                accessibilityLabel={label}
-              >
-                <Text style={styles.typeEmoji}>{emoji}</Text>
-                <Text style={[styles.typeLabel, activityType === type && styles.typeLabelActive]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <Text style={styles.idleTitle}>Ready to move?</Text>
+          <Text style={styles.idleSubtitle}>Just press Start. We'll automatically detect your activity.</Text>
 
           <TouchableOpacity
             style={styles.startButton}
@@ -277,52 +249,25 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '700',
     color: GH.text,
-    marginBottom: 32,
+    marginBottom: 8,
   },
-  typeGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    justifyContent: 'center',
-    marginBottom: 48,
-  },
-  typeButton: {
-    width: 88,
-    height: 88,
-    borderRadius: 12,
-    backgroundColor: GH.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: GH.border,
-  },
-  typeButtonActive: {
-    borderColor: GH.green,
-    backgroundColor: '#0d4a1f',
-  },
-  typeEmoji: {
-    fontSize: 28,
-    marginBottom: 4,
-  },
-  typeLabel: {
-    fontSize: 12,
-    fontWeight: '600',
+  idleSubtitle: {
+    fontSize: 14,
     color: GH.muted,
-  },
-  typeLabelActive: {
-    color: GH.greenBright,
+    marginBottom: 48,
+    textAlign: 'center',
   },
   startButton: {
     backgroundColor: GH.green,
     borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 64,
+    paddingVertical: 18,
+    paddingHorizontal: 80,
     borderWidth: 1,
     borderColor: GH.greenBright,
   },
   startButtonText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
     letterSpacing: 0.3,
   },

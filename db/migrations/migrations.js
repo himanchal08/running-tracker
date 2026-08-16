@@ -17,7 +17,7 @@ const migrations = {
     ],
   },
   migrations: {
-    '0000_dear_mister_sinister': `CREATE TABLE \`activities\` (
+    'm0000': `CREATE TABLE \`activities\` (
 \t\`id\` text PRIMARY KEY NOT NULL,
 \t\`type\` text DEFAULT 'unknown' NOT NULL,
 \t\`started_at\` integer NOT NULL,

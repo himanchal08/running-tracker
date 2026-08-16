@@ -1,4 +1,4 @@
-import { eq, desc, isNull, isNotNull, lte } from 'drizzle-orm';
+import { eq, desc, isNull, isNotNull, lte, and } from 'drizzle-orm';
 import type { Db } from '../client';
 import { activities } from '../schema';
 import type { NewActivity, Activity } from '../schema';
@@ -118,4 +118,15 @@ export async function setActivityType(
     .update(activities)
     .set({ type, isManualOverride: true })
     .where(eq(activities.id, id));
+}
+
+export async function autoUpdateActivityType(
+  db: Db,
+  id: string,
+  type: Activity['type'],
+): Promise<void> {
+  await db
+    .update(activities)
+    .set({ type })
+    .where(and(eq(activities.id, id), eq(activities.isManualOverride, false)));
 }
