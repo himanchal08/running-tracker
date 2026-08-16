@@ -50,7 +50,7 @@ export function LiveMap({ routePoints, lineColor = '#fc4c02' }: Props) {
         attributionEnabled={false}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       >
-        {hasPermission && (
+        {hasPermission ? (
           <>
             <MapLibreGL.Camera
               followUserLocation={true}
@@ -62,6 +62,11 @@ export function LiveMap({ routePoints, lineColor = '#fc4c02' }: Props) {
               showsUserHeadingIndicator={true}
             />
           </>
+        ) : (
+          <MapLibreGL.Camera
+            zoomLevel={2}
+            centerCoordinate={[-98.5795, 39.8283]} 
+          />
         )}
 
         {routePoints.length > 1 && (

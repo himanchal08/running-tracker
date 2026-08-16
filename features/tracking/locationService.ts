@@ -112,7 +112,11 @@ export async function startRecording(activityId: string): Promise<void> {
     }
     
     // We request background so the user can be prompted.
-    await Location.requestBackgroundPermissionsAsync();
+    try {
+      await Location.requestBackgroundPermissionsAsync();
+    } catch (err) {
+      console.log('Background permission request skipped/denied:', err);
+    }
 
     _pipeline = new IngestionPipeline(DEFAULT_INGESTION_CONFIG);
     _activeActivityId = activityId;
