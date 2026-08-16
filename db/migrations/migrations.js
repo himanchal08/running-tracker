@@ -17,7 +17,7 @@ const migrations = {
     ],
   },
   migrations: {
-    'm0000': `CREATE TABLE \`activities\` (
+    'm0000': `CREATE TABLE IF NOT EXISTS \`activities\` (
 \t\`id\` text PRIMARY KEY NOT NULL,
 \t\`type\` text DEFAULT 'unknown' NOT NULL,
 \t\`started_at\` integer NOT NULL,
@@ -36,9 +36,9 @@ const migrations = {
 \t\`notes\` text
 );
 --> statement-breakpoint
-CREATE INDEX \`activities_started_at_idx\` ON \`activities\` (\`started_at\`);--> statement-breakpoint
-CREATE INDEX \`activities_trashed_at_idx\` ON \`activities\` (\`trashed_at\`);--> statement-breakpoint
-CREATE TABLE \`goals\` (
+CREATE INDEX IF NOT EXISTS \`activities_started_at_idx\` ON \`activities\` (\`started_at\`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS \`activities_trashed_at_idx\` ON \`activities\` (\`trashed_at\`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS \`goals\` (
 \t\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 \t\`metric\` text NOT NULL,
 \t\`period\` text NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE \`goals\` (
 \t\`is_active\` integer DEFAULT true NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE \`personal_records\` (
+CREATE TABLE IF NOT EXISTS \`personal_records\` (
 \t\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 \t\`category\` text NOT NULL,
 \t\`value\` real NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE \`personal_records\` (
 \tFOREIGN KEY (\`activity_id\`) REFERENCES \`activities\`(\`id\`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE TABLE \`points\` (
+CREATE TABLE IF NOT EXISTS \`points\` (
 \t\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 \t\`activity_id\` text NOT NULL,
 \t\`ts\` integer NOT NULL,
@@ -70,9 +70,9 @@ CREATE TABLE \`points\` (
 \tFOREIGN KEY (\`activity_id\`) REFERENCES \`activities\`(\`id\`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX \`points_activity_id_idx\` ON \`points\` (\`activity_id\`);--> statement-breakpoint
-CREATE INDEX \`points_ts_idx\` ON \`points\` (\`ts\`);--> statement-breakpoint
-CREATE TABLE \`route_attempts\` (
+CREATE INDEX IF NOT EXISTS \`points_activity_id_idx\` ON \`points\` (\`activity_id\`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS \`points_ts_idx\` ON \`points\` (\`ts\`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS \`route_attempts\` (
 \t\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 \t\`route_id\` text NOT NULL,
 \t\`activity_id\` text NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE \`route_attempts\` (
 \tFOREIGN KEY (\`activity_id\`) REFERENCES \`activities\`(\`id\`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE \`routes\` (
+CREATE TABLE IF NOT EXISTS \`routes\` (
 \t\`id\` text PRIMARY KEY NOT NULL,
 \t\`canonical_polyline\` text NOT NULL,
 \t\`first_seen_at\` integer NOT NULL,
@@ -89,12 +89,12 @@ CREATE TABLE \`routes\` (
 \t\`display_name\` text
 );
 --> statement-breakpoint
-CREATE TABLE \`settings\` (
+CREATE TABLE IF NOT EXISTS \`settings\` (
 \t\`key\` text PRIMARY KEY NOT NULL,
 \t\`value\` text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE \`splits\` (
+CREATE TABLE IF NOT EXISTS \`splits\` (
 \t\`id\` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 \t\`activity_id\` text NOT NULL,
 \t\`split_index\` integer NOT NULL,
@@ -105,7 +105,7 @@ CREATE TABLE \`splits\` (
 \tFOREIGN KEY (\`activity_id\`) REFERENCES \`activities\`(\`id\`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX \`splits_activity_id_idx\` ON \`splits\` (\`activity_id\`);`,
+CREATE INDEX IF NOT EXISTS \`splits_activity_id_idx\` ON \`splits\` (\`activity_id\`);`,
   },
 };
 
