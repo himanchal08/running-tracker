@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import MapLibreGL from '@maplibre/maplibre-react-native';
+import * as MapLibreGL from '@maplibre/maplibre-react-native';
 import { getDb } from '../db/client';
 import { getAllPointsForHeatmap } from '../db/queries/points';
 import { buildActivityRoutes, routesToGeoJSON } from '../features/heatmap/heatmapBuilder';
