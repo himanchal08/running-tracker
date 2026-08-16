@@ -109,13 +109,18 @@ async function onActivityChange(event: MotionActivityEvent): Promise<void> {
   }
 }
 
-export async function startRecording(activityId: string): Promise<void> {
-  _pipeline = new IngestionPipeline(DEFAULT_INGESTION_CONFIG);
-  _activeActivityId = activityId;
-  _totalRawPoints = 0;
-  _acceptedPoints = 0;
+let _isStarting = false;
 
-  await BackgroundGeolocation.ready({
+export async function startRecording(activityId: string): Promise<void> {
+  if (_isStarting) return;
+  _isStarting = true;
+  try {
+    _pipeline = new IngestionPipeline(DEFAULT_INGESTION_CONFIG);
+    _activeActivityId = activityId;
+    _totalRawPoints = 0;
+    _acceptedPoints = 0;
+
+    await BackgroundGeolocation.ready({
     desiredAccuracy: BackgroundGeolocation.DESIRED_ACCURACY_HIGH,
     distanceFilter: 5,
     stopOnTerminate: false,
@@ -133,7 +138,10 @@ export async function startRecording(activityId: string): Promise<void> {
   BackgroundGeolocation.onActivityChange(onActivityChange);
   await BackgroundGeolocation.start();
 
-  useRecordingStore.getState().setStatus('recording', activityId);
+    useRecordingStore.getState().setStatus('recording', activityId);
+  } finally {
+    _isStarting = false;
+  }
 }
 
 export async function pauseRecording(): Promise<void> {

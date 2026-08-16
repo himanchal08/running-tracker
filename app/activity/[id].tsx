@@ -171,7 +171,7 @@ export default function ActivityDetailScreen() {
       <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.9 }}>
         <View style={styles.shareableContainer}>
           <View style={styles.mapContainer}>
-            <LiveMap routePoints={routePoints} />
+            <LiveMap routePoints={routePoints} lineColor="#fc4c02" />
           </View>
 
           <View style={styles.header}>

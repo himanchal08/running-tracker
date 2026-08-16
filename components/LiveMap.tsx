@@ -4,11 +4,12 @@ import MapLibreGL from '@maplibre/maplibre-react-native';
 
 MapLibreGL.setAccessToken(null);
 
-interface LiveMapProps {
-  routePoints: [number, number][]; // Array of [lon, lat]
+interface Props {
+  routePoints: [number, number][]; // [longitude, latitude]
+  lineColor?: string;
 }
 
-export function LiveMap({ routePoints }: LiveMapProps) {
+export function LiveMap({ routePoints, lineColor = '#3fb950' }: Props) {
   const routeLine = {
     type: 'FeatureCollection',
     features: [
@@ -47,7 +48,7 @@ export function LiveMap({ routePoints }: LiveMapProps) {
             <MapLibreGL.LineLayer
               id="routeLayer"
               style={{
-                lineColor: '#3fb950',
+                lineColor: lineColor,
                 lineWidth: 5,
                 lineCap: 'round',
                 lineJoin: 'round',
