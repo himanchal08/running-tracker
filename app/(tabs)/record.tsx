@@ -94,7 +94,6 @@ export default function RecordScreen() {
 
   const livePace = computePaceSecPerUnit(liveDistanceM, liveMovingTimeS);
 
-  // Smooth ticker for elapsed time between GPS updates
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (status === 'recording') {

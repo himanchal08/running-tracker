@@ -8,7 +8,7 @@ interface LiveStats {
   liveElapsedTimeS: number;
   liveElevationGainM: number;
   liveGpsAccuracyM: number | null;
-  routePoints: [number, number][]; // [longitude, latitude] for MapLibre
+  routePoints: [number, number][];
 }
 
 interface RecordingState extends LiveStats {

@@ -1,7 +1,49 @@
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, and, gte, isNull } from 'drizzle-orm';
 import type { Db } from '../client';
-import { points } from '../schema';
-import type { NewPoint, Point } from '../schema';
+import { points, activities } from '../schema';
+import type { NewPoint, Point, Activity } from '../schema';
+
+export interface HeatmapPoint {
+  activityId: string;
+  lat: number;
+  lon: number;
+}
+
+export async function getAllPointsForHeatmap(
+  db: Db,
+  opts: {
+    activityType?: Activity['type'] | 'all';
+    cutoffDate?: Date;
+  } = {},
+): Promise<HeatmapPoint[]> {
+  const { activityType, cutoffDate } = opts;
+
+  const activityConditions = [isNull(activities.trashedAt)];
+  if (activityType && activityType !== 'all') {
+    activityConditions.push(eq(activities.type, activityType));
+  }
+  if (cutoffDate) {
+    activityConditions.push(gte(activities.startedAt, cutoffDate));
+  }
+
+  const rows = await db
+    .select({
+      activityId: points.activityId,
+      lat: points.lat,
+      lon: points.lon,
+    })
+    .from(points)
+    .innerJoin(activities, eq(points.activityId, activities.id))
+    .where(
+      and(
+        eq(points.isFilteredOutlier, false),
+        ...activityConditions,
+      ),
+    )
+    .orderBy(asc(points.activityId), asc(points.ts));
+
+  return rows;
+}
 
 export async function insertPoint(db: Db, data: NewPoint): Promise<void> {
   await db.insert(points).values(data);

@@ -92,7 +92,7 @@ async function onLocation(location: Location): Promise<void> {
 async function onActivityChange(event: MotionActivityEvent): Promise<void> {
   if (!_activeActivityId) return;
 
-  const { activity } = event; // 'in_vehicle', 'on_bicycle', 'on_foot', 'running', 'still', 'walking', 'unknown'
+  const { activity } = event;
   let type: 'walking' | 'running' | 'cycling' | 'hiking' | 'unknown' = 'unknown';
 
   if (activity === 'running') type = 'running';

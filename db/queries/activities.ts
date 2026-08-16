@@ -2,6 +2,9 @@ import { eq, desc, isNull, isNotNull, lte, and } from 'drizzle-orm';
 import type { Db } from '../client';
 import { activities } from '../schema';
 import type { NewActivity, Activity } from '../schema';
+import { getPointsForActivity } from './points';
+import { listPRs, savePRIfBetter, clearAllPRs } from './personalRecords';
+import { detectPRs } from '../../features/analysis/personalRecords';
 
 export async function insertActivity(
   db: Db,
@@ -91,6 +94,7 @@ export async function trashActivity(db: Db, id: string): Promise<void> {
     .update(activities)
     .set({ trashedAt: new Date() })
     .where(eq(activities.id, id));
+  await recomputeAllPRs(db);
 }
 
 export async function restoreActivity(db: Db, id: string): Promise<void> {
@@ -98,6 +102,28 @@ export async function restoreActivity(db: Db, id: string): Promise<void> {
     .update(activities)
     .set({ trashedAt: null })
     .where(eq(activities.id, id));
+  await recomputeAllPRs(db);
+}
+
+export async function recomputeAllPRs(db: Db): Promise<void> {
+  try {
+    await clearAllPRs(db);
+
+    const allActivities = await db
+      .select()
+      .from(activities)
+      .where(isNull(activities.trashedAt))
+      .orderBy(desc(activities.startedAt));
+
+    for (const activity of allActivities) {
+      const pts = await getPointsForActivity(db, activity.id);
+      const existingPRs = await listPRs(db);
+      const detected = detectPRs(activity, pts.filter((p) => !p.isFilteredOutlier), existingPRs);
+      await Promise.all(detected.map((pr) => savePRIfBetter(db, pr)));
+    }
+  } catch (err) {
+    console.error('[recomputeAllPRs] failed:', err);
+  }
 }
 
 export async function hardDeleteTrashedBefore(

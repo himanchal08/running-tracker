@@ -28,6 +28,8 @@ import {
   ACTIVITY_TYPE_EMOJI,
   ACTIVITY_TYPE_LABELS,
 } from '../../features/tracking/utils/formatters';
+import { detectPRs, PR_LABELS, type PRCategory, type NewPR } from '../../features/analysis/personalRecords';
+import { listPRs, savePRIfBetter } from '../../db/queries/personalRecords';
 
 const GH = {
   bg: '#0d1117',
@@ -71,6 +73,7 @@ export default function ActivityDetailScreen() {
   const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [newPRs, setNewPRs] = useState<NewPR[]>([]);
 
   const viewShotRef = useRef<any>(null);
 
@@ -79,10 +82,24 @@ export default function ActivityDetailScreen() {
     try {
       const db = getDb();
       const row = await getActivity(db, id);
-      if (!row) { setNotFound(true); } else { 
-        setActivity(row); 
+      if (!row) {
+        setNotFound(true);
+      } else {
+        setActivity(row);
         const pts = await getPointsForActivity(db, id);
-        setRoutePoints(pts.map(p => [p.lon, p.lat]));
+        setRoutePoints(pts.map((p) => [p.lon, p.lat]));
+
+        try {
+          const existingPRs = await listPRs(db);
+          const filteredPts = pts.filter((p) => !p.isFilteredOutlier);
+          const detected = detectPRs(row, filteredPts, existingPRs);
+          if (detected.length > 0) {
+            await Promise.all(detected.map((pr) => savePRIfBetter(db, pr)));
+            setNewPRs(detected);
+          }
+        } catch (prErr) {
+          console.error('[ActivityDetail] PR detection failed:', prErr);
+        }
       }
     } catch (err) {
       console.error('[ActivityDetail] load failed:', err);
@@ -162,6 +179,17 @@ export default function ActivityDetailScreen() {
       style={styles.screen}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
     >
+      {newPRs.length > 0 && (
+        <View style={styles.prBanner}>
+          <Text style={styles.prBannerTitle}>🏆 New Personal {newPRs.length === 1 ? 'Record' : 'Records'}!</Text>
+          {newPRs.map((pr) => (
+            <Text key={pr.category} style={styles.prBannerItem}>
+              · {PR_LABELS[pr.category as PRCategory] ?? pr.category}
+            </Text>
+          ))}
+        </View>
+      )}
+
       <View style={styles.headerRow}>
         <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
           <Text style={styles.shareButtonText}>Share ↗</Text>
@@ -175,34 +203,34 @@ export default function ActivityDetailScreen() {
           </View>
 
           <View style={styles.header}>
-        <Text style={styles.headerEmoji}>{ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}</Text>
-        <View>
-          <Text style={styles.headerType}>{ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'}</Text>
-          <Text style={styles.headerDate}>
-            {formatActivityDate(activity.startedAt)} · {startTime}–{endTime}
-          </Text>
-        </View>
-      </View>
+            <Text style={styles.headerEmoji}>{ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}</Text>
+            <View>
+              <Text style={styles.headerType}>{ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'}</Text>
+              <Text style={styles.headerDate}>
+                {formatActivityDate(activity.startedAt)} · {startTime}–{endTime}
+              </Text>
+            </View>
+          </View>
 
-      <View style={styles.metricsGrid}>
-        <View style={styles.metricTile}>
-          <Text style={styles.metricValue}>{formatDistance(activity.distanceM)}</Text>
-          <Text style={styles.metricLabel}>Distance</Text>
+          <View style={styles.metricsGrid}>
+            <View style={styles.metricTile}>
+              <Text style={styles.metricValue}>{formatDistance(activity.distanceM)}</Text>
+              <Text style={styles.metricLabel}>Distance</Text>
+            </View>
+            <View style={styles.metricTile}>
+              <Text style={styles.metricValue}>{formatDuration(activity.movingTimeS)}</Text>
+              <Text style={styles.metricLabel}>Moving time</Text>
+            </View>
+            <View style={styles.metricTile}>
+              <Text style={styles.metricValue}>{formatPace(pace)}</Text>
+              <Text style={styles.metricLabel}>Avg pace</Text>
+            </View>
+            <View style={styles.metricTile}>
+              <Text style={styles.metricValue}>{formatSpeed(activity.avgSpeedMs)}</Text>
+              <Text style={styles.metricLabel}>Avg speed</Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.metricTile}>
-          <Text style={styles.metricValue}>{formatDuration(activity.movingTimeS)}</Text>
-          <Text style={styles.metricLabel}>Moving time</Text>
-        </View>
-        <View style={styles.metricTile}>
-          <Text style={styles.metricValue}>{formatPace(pace)}</Text>
-          <Text style={styles.metricLabel}>Avg pace</Text>
-        </View>
-        <View style={styles.metricTile}>
-          <Text style={styles.metricValue}>{formatSpeed(activity.avgSpeedMs)}</Text>
-          <Text style={styles.metricLabel}>Avg speed</Text>
-        </View>
-      </View>
-      </View>
       </ViewShot>
 
       <SectionCard title="Performance">
@@ -286,7 +314,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   shareableContainer: {
-    backgroundColor: GH.bg, // For the screenshot background
+    backgroundColor: GH.bg,
     paddingBottom: 10,
   },
   mapContainer: {
@@ -400,5 +428,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: GH.red,
+  },
+  prBanner: {
+    backgroundColor: '#2e1f00',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#d29922',
+    padding: 14,
+    marginBottom: 14,
+  },
+  prBannerTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#d29922',
+    marginBottom: 6,
+  },
+  prBannerItem: {
+    fontSize: 13,
+    color: '#e3b341',
+    fontWeight: '500',
+    marginTop: 2,
   },
 });
