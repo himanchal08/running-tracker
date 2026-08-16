@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/android-chrome-512x512.png",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/android-chrome-512x512.png",
       "resizeMode": "contain",
       "backgroundColor": "#0d1117"
     },
@@ -28,9 +28,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#0F0F1A",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png"
+        "foregroundImage": "./assets/android-chrome-512x512.png",
+        "backgroundColor": "#0d1117"
       },
       "package": "com.personal.movementtracker",
       "permissions": [
