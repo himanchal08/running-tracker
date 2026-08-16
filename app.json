@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "Movement Tracker",
+    "slug": "movement-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.personal.movementtracker",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Movement Tracker needs location access to record your activities.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Movement Tracker needs 'Always' location access to track activities while your screen is locked.",
+        "NSLocationAlwaysUsageDescription": "Movement Tracker needs 'Always' location access to track activities while your screen is locked.",
+        "UIBackgroundModes": ["location", "fetch", "processing"]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F0F1A",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png"
+      },
+      "package": "com.personal.movementtracker",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION",
+        "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-dev-client",
+      [
+        "react-native-background-geolocation",
+        {
+          "locationAuthorizationRequest": "Always",
+          "backgroundPermissionRationale": {
+            "title": "Allow Movement Tracker to access this device's location in the background?",
+            "message": "In order to track your activity while the screen is off, enable 'Allow all the time' in the next screen.",
+            "positiveAction": "Change to Allow all the time",
+            "negativeAction": "Cancel"
+          }
+        }
+      ],
+      [
+        "@maplibre/maplibre-react-native",
+        {}
+      ]
+    ],
+    "scheme": "movement-tracker",
+    "web": {
+      "bundler": "metro"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
