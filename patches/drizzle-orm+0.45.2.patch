@@ -1,0 +1,68 @@
+diff --git a/node_modules/drizzle-orm/op-sqlite/session.cjs b/node_modules/drizzle-orm/op-sqlite/session.cjs
+index 735db63..d5f9e96 100644
+--- a/node_modules/drizzle-orm/op-sqlite/session.cjs
++++ b/node_modules/drizzle-orm/op-sqlite/session.cjs
+@@ -107,7 +107,8 @@ class OPSQLitePreparedQuery extends import_session.SQLitePreparedQuery {
+       const params = (0, import_sql.fillPlaceholders)(query.params, placeholderValues ?? {});
+       logger.logQuery(query.sql, params);
+       return await this.queryWithCache(query.sql, params, async () => {
+-        return client.execute(query.sql, params).rows?._array || [];
++        const res = await client.executeAsync(query.sql, params);
++        return res.rows?._array || res.rows || [];
+       });
+     }
+     const rows = await this.values(placeholderValues);
+@@ -122,7 +123,8 @@ class OPSQLitePreparedQuery extends import_session.SQLitePreparedQuery {
+     logger.logQuery(query.sql, params);
+     if (!fields && !customResultMapper) {
+       const rows2 = await this.queryWithCache(query.sql, params, async () => {
+-        return client.execute(query.sql, params).rows?._array || [];
++        const res = await client.executeAsync(query.sql, params);
++        return res.rows?._array || res.rows || [];
+       });
+       return rows2[0];
+     }
+@@ -140,7 +142,8 @@ class OPSQLitePreparedQuery extends import_session.SQLitePreparedQuery {
+     const params = (0, import_sql.fillPlaceholders)(this.query.params, placeholderValues ?? {});
+     this.logger.logQuery(this.query.sql, params);
+     return await this.queryWithCache(this.query.sql, params, async () => {
+-      return await this.client.executeRawAsync(this.query.sql, params);
++      const res = await this.client.executeRawAsync(this.query.sql, params);
++      return (Array.isArray(res) ? res : res.rawRows) || [];
+     });
+   }
+   /** @internal */
+diff --git a/node_modules/drizzle-orm/op-sqlite/session.js b/node_modules/drizzle-orm/op-sqlite/session.js
+index 4b644d9..de841d3 100644
+--- a/node_modules/drizzle-orm/op-sqlite/session.js
++++ b/node_modules/drizzle-orm/op-sqlite/session.js
+@@ -85,7 +85,8 @@ class OPSQLitePreparedQuery extends SQLitePreparedQuery {
+       const params = fillPlaceholders(query.params, placeholderValues ?? {});
+       logger.logQuery(query.sql, params);
+       return await this.queryWithCache(query.sql, params, async () => {
+-        return client.execute(query.sql, params).rows?._array || [];
++        const res = await client.executeAsync(query.sql, params);
++        return res.rows?._array || res.rows || [];
+       });
+     }
+     const rows = await this.values(placeholderValues);
+@@ -100,7 +101,8 @@ class OPSQLitePreparedQuery extends SQLitePreparedQuery {
+     logger.logQuery(query.sql, params);
+     if (!fields && !customResultMapper) {
+       const rows2 = await this.queryWithCache(query.sql, params, async () => {
+-        return client.execute(query.sql, params).rows?._array || [];
++        const res = await client.executeAsync(query.sql, params);
++        return res.rows?._array || res.rows || [];
+       });
+       return rows2[0];
+     }
+@@ -118,7 +120,8 @@ class OPSQLitePreparedQuery extends SQLitePreparedQuery {
+     const params = fillPlaceholders(this.query.params, placeholderValues ?? {});
+     this.logger.logQuery(this.query.sql, params);
+     return await this.queryWithCache(this.query.sql, params, async () => {
+-      return await this.client.executeRawAsync(this.query.sql, params);
++      const res = await this.client.executeRawAsync(this.query.sql, params);
++      return (Array.isArray(res) ? res : res.rawRows) || [];
+     });
+   }
+   /** @internal */
