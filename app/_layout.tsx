@@ -1,14 +1,34 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { getDb } from '../db/client';
+import { syncHistoricalSteps, startStepWatching, stopStepWatching } from '../features/habits/stepTracker';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [dbReady, setDbReady] = useState(false);
+
   useEffect(() => {
-    getDb();
+    const init = async () => {
+      await getDb();
+      setDbReady(true);
+      await syncHistoricalSteps();
+      startStepWatching();
+      await SplashScreen.hideAsync();
+    };
+    init();
+    return () => {
+      stopStepWatching();
+    };
   }, []);
+
+  if (!dbReady) {
+    return null;
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

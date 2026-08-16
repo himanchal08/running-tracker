@@ -163,6 +163,15 @@ export default function HistoryScreen() {
             <Text style={styles.routesEntryText}>🗺  My Routes</Text>
             <Text style={styles.routesEntryChevron}>›</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.routesEntryBtn}
+            onPress={() => router.push('/heatmap' as any)}
+            accessibilityRole="button"
+            accessibilityLabel="View geographic heatmap"
+          >
+            <Text style={styles.routesEntryText}>🌍  Geographic Heatmap</Text>
+            <Text style={styles.routesEntryChevron}>›</Text>
+          </TouchableOpacity>
         </>
       }
       ListEmptyComponent={<EmptyHistory />}

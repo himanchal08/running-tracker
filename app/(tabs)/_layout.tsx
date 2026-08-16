@@ -96,13 +96,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="heatmap"
-        options={{
-          title: 'Map',
-          tabBarIcon: ({ color }) => <MapIcon color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="insights"
         options={{
           title: 'Insights',
@@ -110,9 +103,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="records"
+        name="goals"
         options={{
-          title: 'Records',
+          title: 'Goals',
           tabBarIcon: ({ color }) => <RecordsIcon color={color} />,
         }}
       />

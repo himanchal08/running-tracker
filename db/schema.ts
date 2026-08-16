@@ -78,7 +78,7 @@ export const routeAttempts = sqliteTable('route_attempts', {
 export const goals = sqliteTable('goals', {
   id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
   metric: text('metric').notNull(),
-  period: text('period', { enum: ['week', 'month'] }).notNull(),
+  period: text('period', { enum: ['day', 'week', 'month'] }).notNull(),
   targetValue: real('target_value').notNull(),
   startDate: text('start_date').notNull(),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
@@ -87,6 +87,12 @@ export const goals = sqliteTable('goals', {
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
   value: text('value').notNull(),
+});
+
+export const dailyMetrics = sqliteTable('daily_metrics', {
+  date: text('date').primaryKey(),
+  steps: integer('steps').notNull().default(0),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export type Activity = typeof activities.$inferSelect;
@@ -99,3 +105,4 @@ export type PersonalRecord = typeof personalRecords.$inferSelect;
 export type Route = typeof routes.$inferSelect;
 export type RouteAttempt = typeof routeAttempts.$inferSelect;
 export type Goal = typeof goals.$inferSelect;
+export type DailyMetric = typeof dailyMetrics.$inferSelect;

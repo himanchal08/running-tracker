@@ -60,7 +60,8 @@
         "@maplibre/maplibre-react-native",
         {}
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "expo-splash-screen"
     ],
     "scheme": "movement-tracker",
     "web": {
