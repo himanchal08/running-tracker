@@ -24,13 +24,25 @@ import {
   ACTIVITY_TYPE_LABELS,
 } from '../../features/tracking/utils/formatters';
 
+const GH = {
+  bg: '#0d1117',
+  surface: '#161b22',
+  border: '#30363d',
+  text: '#c9d1d9',
+  muted: '#8b949e',
+  green: '#2ea043',
+  greenBright: '#3fb950',
+  blue: '#58a6ff',
+  red: '#f85149',
+  redSurface: '#3d0000',
+  redBorder: '#6e1313',
+};
+
 function StatRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <View style={styles.statRow}>
       <Text style={styles.statRowLabel}>{label}</Text>
-      <Text style={[styles.statRowValue, accent && styles.statRowValueAccent]}>
-        {value}
-      </Text>
+      <Text style={[styles.statRowValue, accent && styles.statRowValueAccent]}>{value}</Text>
     </View>
   );
 }
@@ -72,7 +84,7 @@ export default function ActivityDetailScreen() {
   const handleDelete = useCallback(() => {
     Alert.alert(
       'Move to trash?',
-      'The activity will be kept in the trash for 30 days before permanent deletion.',
+      'The activity will be kept for 30 days before permanent deletion.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -96,7 +108,7 @@ export default function ActivityDetailScreen() {
   if (loading) {
     return (
       <View style={styles.centred}>
-        <ActivityIndicator size="large" color="#FF4D00" />
+        <ActivityIndicator size="large" color={GH.greenBright} />
       </View>
     );
   }
@@ -121,13 +133,9 @@ export default function ActivityDetailScreen() {
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
     >
       <View style={styles.header}>
-        <Text style={styles.headerEmoji}>
-          {ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}
-        </Text>
+        <Text style={styles.headerEmoji}>{ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}</Text>
         <View>
-          <Text style={styles.headerType}>
-            {ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'}
-          </Text>
+          <Text style={styles.headerType}>{ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'}</Text>
           <Text style={styles.headerDate}>
             {formatActivityDate(activity.startedAt)} · {startTime}–{endTime}
           </Text>
@@ -156,10 +164,7 @@ export default function ActivityDetailScreen() {
       <SectionCard title="Performance">
         <StatRow label="Max speed" value={formatSpeed(activity.maxSpeedMs)} />
         <StatRow label="Elapsed time" value={formatDuration(activity.elapsedTimeS)} />
-        <StatRow
-          label="Moving time"
-          value={formatDuration(activity.movingTimeS)}
-        />
+        <StatRow label="Moving time" value={formatDuration(activity.movingTimeS)} />
         {activity.elapsedTimeS > 0 && (
           <StatRow
             label="Efficiency"
@@ -169,15 +174,8 @@ export default function ActivityDetailScreen() {
       </SectionCard>
 
       <SectionCard title="Elevation">
-        <StatRow
-          label="Gain"
-          value={`+${Math.round(activity.elevationGainM)} m`}
-          accent
-        />
-        <StatRow
-          label="Loss"
-          value={`-${Math.round(activity.elevationLossM)} m`}
-        />
+        <StatRow label="Gain" value={`+${Math.round(activity.elevationGainM)} m`} accent />
+        <StatRow label="Loss" value={`-${Math.round(activity.elevationLossM)} m`} />
       </SectionCard>
 
       <SectionCard title="Data quality">
@@ -207,12 +205,10 @@ export default function ActivityDetailScreen() {
   );
 }
 
-const ACCENT = '#FF4D00';
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: GH.bg,
   },
   content: {
     padding: 16,
@@ -221,24 +217,22 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: GH.bg,
   },
   notFoundText: {
     fontSize: 16,
-    color: '#6B7280',
+    color: GH.muted,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    backgroundColor: GH.surface,
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: GH.border,
   },
   headerEmoji: {
     fontSize: 36,
@@ -246,63 +240,57 @@ const styles = StyleSheet.create({
   headerType: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: GH.text,
   },
   headerDate: {
     fontSize: 13,
-    color: '#6B7280',
+    color: GH.muted,
     marginTop: 2,
   },
   metricsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   metricTile: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: GH.surface,
+    borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 12,
     alignItems: 'center',
     flex: 1,
     minWidth: '45%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: GH.border,
   },
   metricValue: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111827',
+    color: GH.text,
     letterSpacing: -0.3,
   },
   metricLabel: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: GH.muted,
     fontWeight: '500',
     marginTop: 3,
   },
   sectionCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
+    backgroundColor: GH.surface,
+    borderRadius: 10,
     padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: GH.border,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '700',
-    color: '#9CA3AF',
+    color: GH.muted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   statRow: {
     flexDirection: 'row',
@@ -310,33 +298,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: GH.border,
   },
   statRowLabel: {
     fontSize: 14,
-    color: '#6B7280',
+    color: GH.muted,
     fontWeight: '500',
   },
   statRowValue: {
     fontSize: 14,
-    color: '#111827',
+    color: GH.text,
     fontWeight: '600',
   },
   statRowValueAccent: {
-    color: ACCENT,
+    color: GH.greenBright,
   },
   deleteButton: {
     marginTop: 8,
-    paddingVertical: 16,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#FCA5A5',
+    paddingVertical: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: GH.redBorder,
     alignItems: 'center',
-    backgroundColor: '#FFF5F5',
+    backgroundColor: GH.redSurface,
   },
   deleteButtonText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#DC2626',
+    color: GH.red,
   },
 });

@@ -27,6 +27,21 @@ import {
   gpsAccuracyColor,
 } from '../../features/tracking/utils/formatters';
 
+const GH = {
+  bg: '#0d1117',
+  surface: '#161b22',
+  border: '#30363d',
+  text: '#c9d1d9',
+  muted: '#8b949e',
+  green: '#2ea043',
+  greenBright: '#3fb950',
+  greenFaint: '#0d4a1f',
+  blue: '#58a6ff',
+  yellow: '#d29922',
+  red: '#f85149',
+  redFaint: '#3d0000',
+};
+
 function generateId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
@@ -38,10 +53,10 @@ function generateId(): string {
   });
 }
 
-function StatTile({ label, value, large }: { label: string; value: string; large?: boolean }) {
+function StatTile({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.statTile}>
-      <Text style={[styles.statValue, large && styles.statValueLarge]}>{value}</Text>
+      <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -55,9 +70,7 @@ function GpsIndicator({ accuracyM }: { accuracyM: number | null }) {
   return (
     <View style={styles.gpsRow}>
       <View style={[styles.gpsDot, { backgroundColor: color }]} />
-      <Text style={[styles.gpsText, { color }]}>
-        GPS {label}{detail}
-      </Text>
+      <Text style={[styles.gpsText, { color }]}>GPS {label}{detail}</Text>
     </View>
   );
 }
@@ -85,7 +98,6 @@ export default function RecordScreen() {
   const handleStart = useCallback(async () => {
     const activityId = generateId();
     const db = getDb();
-
     try {
       await insertActivity(db, {
         id: activityId,
@@ -98,7 +110,6 @@ export default function RecordScreen() {
         elevationLossM: 0,
         isManualOverride: false,
       });
-
       await startRecording(activityId);
     } catch (err) {
       Alert.alert('Error', 'Could not start recording. Check location permissions.');
@@ -107,47 +118,35 @@ export default function RecordScreen() {
   }, [activityType]);
 
   const handlePause = useCallback(async () => {
-    try {
-      await pauseRecording();
-    } catch (err) {
+    try { await pauseRecording(); } catch (err) {
       console.error('[RecordScreen] pauseRecording failed:', err);
     }
   }, []);
 
   const handleResume = useCallback(async () => {
-    try {
-      await resumeRecording();
-    } catch (err) {
+    try { await resumeRecording(); } catch (err) {
       console.error('[RecordScreen] resumeRecording failed:', err);
     }
   }, []);
 
   const handleStop = useCallback(async () => {
-    Alert.alert(
-      'Stop recording?',
-      'This will save the activity.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Stop & Save',
-          style: 'destructive',
-          onPress: async () => {
-            const id = activeActivityId;
-            try {
-              await stopRecording();
-              if (id) {
-                router.push(`/activity/${id}`);
-              } else {
-                router.push('/history');
-              }
-            } catch (err) {
-              console.error('[RecordScreen] stopRecording failed:', err);
-              router.push('/history');
-            }
-          },
+    Alert.alert('Stop recording?', 'This will save the activity.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Stop & Save',
+        style: 'destructive',
+        onPress: async () => {
+          const id = activeActivityId;
+          try {
+            await stopRecording();
+            router.push(id ? `/activity/${id}` : '/history');
+          } catch (err) {
+            console.error('[RecordScreen] stopRecording failed:', err);
+            router.push('/history');
+          }
         },
-      ],
-    );
+      },
+    ]);
   }, [activeActivityId, router]);
 
   if (status === 'idle') {
@@ -167,22 +166,14 @@ export default function RecordScreen() {
             ).map(({ type, emoji, label }) => (
               <TouchableOpacity
                 key={type}
-                style={[
-                  styles.typeButton,
-                  activityType === type && styles.typeButtonActive,
-                ]}
+                style={[styles.typeButton, activityType === type && styles.typeButtonActive]}
                 onPress={() => setActivityType(type)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: activityType === type }}
                 accessibilityLabel={label}
               >
                 <Text style={styles.typeEmoji}>{emoji}</Text>
-                <Text
-                  style={[
-                    styles.typeLabel,
-                    activityType === type && styles.typeLabelActive,
-                  ]}
-                >
+                <Text style={[styles.typeLabel, activityType === type && styles.typeLabelActive]}>
                   {label}
                 </Text>
               </TouchableOpacity>
@@ -204,17 +195,11 @@ export default function RecordScreen() {
 
   return (
     <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
-      <ScrollView
-        contentContainerStyle={styles.liveContainer}
-        bounces={false}
-      >
+      <ScrollView contentContainerStyle={styles.liveContainer} bounces={false}>
         <GpsIndicator accuracyM={liveGpsAccuracyM} />
 
-        <View style={[
-          styles.statusBadge,
-          status === 'paused' && styles.statusBadgePaused,
-        ]}>
-          <Text style={styles.statusBadgeText}>
+        <View style={[styles.statusBadge, status === 'paused' && styles.statusBadgePaused]}>
+          <Text style={[styles.statusBadgeText, status === 'paused' && styles.statusBadgeTextPaused]}>
             {status === 'recording' ? '⬤  Recording' : '⏸  Paused'}
           </Text>
         </View>
@@ -277,12 +262,10 @@ export default function RecordScreen() {
   );
 }
 
-const ACCENT = '#FF4D00';
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: GH.bg,
   },
   idleContainer: {
     flex: 1,
@@ -291,9 +274,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   idleTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
+    color: GH.text,
     marginBottom: 32,
   },
   typeGrid: {
@@ -301,26 +284,21 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 12,
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: 48,
   },
   typeButton: {
     width: 88,
     height: 88,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    backgroundColor: GH.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: GH.border,
   },
   typeButtonActive: {
-    borderColor: ACCENT,
-    backgroundColor: '#FFF5F0',
+    borderColor: GH.green,
+    backgroundColor: '#0d4a1f',
   },
   typeEmoji: {
     fontSize: 28,
@@ -329,27 +307,24 @@ const styles = StyleSheet.create({
   typeLabel: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
+    color: GH.muted,
   },
   typeLabelActive: {
-    color: ACCENT,
+    color: GH.greenBright,
   },
   startButton: {
-    backgroundColor: ACCENT,
-    borderRadius: 32,
-    paddingVertical: 18,
+    backgroundColor: GH.green,
+    borderRadius: 8,
+    paddingVertical: 16,
     paddingHorizontal: 64,
-    shadowColor: ACCENT,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
+    borderWidth: 1,
+    borderColor: GH.greenBright,
   },
   startButtonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   liveContainer: {
     flexGrow: 1,
@@ -374,70 +349,72 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statusBadge: {
-    backgroundColor: '#DCFCE7',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
+    backgroundColor: GH.greenFaint,
+    borderRadius: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 14,
     marginBottom: 40,
+    borderWidth: 1,
+    borderColor: GH.green,
   },
   statusBadgePaused: {
-    backgroundColor: '#FEF9C3',
+    backgroundColor: '#2e1f00',
+    borderColor: GH.yellow,
   },
   statusBadgeText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#166534',
+    color: GH.greenBright,
+  },
+  statusBadgeTextPaused: {
+    color: GH.yellow,
   },
   primaryStat: {
     alignItems: 'center',
     marginBottom: 40,
   },
   primaryValue: {
-    fontSize: 52,
-    fontWeight: '800',
-    color: '#111827',
+    fontSize: 56,
+    fontWeight: '700',
+    color: GH.text,
     letterSpacing: -2,
+    fontVariant: ['tabular-nums'],
   },
   primaryLabel: {
-    fontSize: 14,
-    color: '#9CA3AF',
+    fontSize: 13,
+    color: GH.muted,
     fontWeight: '500',
     marginTop: 4,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
     justifyContent: 'center',
     width: '100%',
     marginBottom: 48,
   },
   statTile: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 16,
+    backgroundColor: GH.surface,
+    borderRadius: 10,
+    paddingVertical: 14,
     paddingHorizontal: 20,
     alignItems: 'center',
     minWidth: 140,
     flex: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 1,
+    borderWidth: 1,
+    borderColor: GH.border,
   },
   statValue: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#111827',
+    color: GH.text,
     letterSpacing: -0.5,
-  },
-  statValueLarge: {
-    fontSize: 28,
+    fontVariant: ['tabular-nums'],
   },
   statLabel: {
     fontSize: 11,
-    color: '#9CA3AF',
+    color: GH.muted,
     fontWeight: '500',
     marginTop: 3,
   },
@@ -448,43 +425,42 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
-    paddingVertical: 16,
+    backgroundColor: GH.surface,
+    borderRadius: 8,
+    paddingVertical: 15,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: GH.border,
   },
   pauseButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#374151',
+    color: GH.text,
   },
   resumeButton: {
     flex: 1,
-    backgroundColor: '#DCFCE7',
-    borderRadius: 20,
-    paddingVertical: 16,
+    backgroundColor: GH.greenFaint,
+    borderRadius: 8,
+    paddingVertical: 15,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: GH.green,
   },
   resumeButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#166534',
+    color: GH.greenBright,
   },
   stopButton: {
     flex: 1,
-    backgroundColor: ACCENT,
-    borderRadius: 20,
-    paddingVertical: 16,
+    backgroundColor: GH.red,
+    borderRadius: 8,
+    paddingVertical: 15,
     alignItems: 'center',
-    shadowColor: ACCENT,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   stopButtonText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#ffffff',
   },
 });
