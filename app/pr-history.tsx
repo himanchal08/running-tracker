@@ -20,10 +20,7 @@ const GH = {
 };
 
 function formatValue(value: number, catId: string): string {
-  if (catId.startsWith('fastest_')) return formatDuration(value);
-  if (catId.startsWith('longest_')) return formatDistance(value);
-  if (catId === 'most_elevation') return `${Math.round(value)}m`;
-  return value.toString();
+  return formatDistance(value);
 }
 
 export default function PRHistoryScreen() {
@@ -103,7 +100,6 @@ export default function PRHistoryScreen() {
                     <Text style={[styles.valueText, isCurrentPR && styles.valueTextActive]}>
                       {formatValue(item.value, category as string)}
                     </Text>
-                    {isCurrentPR && <Text style={styles.badge}>CURRENT PR</Text>}
                   </View>
                   <Text style={styles.dateText}>{formatActivityDate(item.date)}</Text>
                 </TouchableOpacity>

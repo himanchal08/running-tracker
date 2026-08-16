@@ -89,12 +89,6 @@ export const settings = sqliteTable('settings', {
   value: text('value').notNull(),
 });
 
-export const dailyMetrics = sqliteTable('daily_metrics', {
-  date: text('date').primaryKey(),
-  steps: integer('steps').notNull().default(0),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
-});
-
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
 export type Point = typeof points.$inferSelect;
@@ -105,4 +99,3 @@ export type PersonalRecord = typeof personalRecords.$inferSelect;
 export type Route = typeof routes.$inferSelect;
 export type RouteAttempt = typeof routeAttempts.$inferSelect;
 export type Goal = typeof goals.$inferSelect;
-export type DailyMetric = typeof dailyMetrics.$inferSelect;

@@ -119,7 +119,7 @@ export default function InsightsScreen() {
     setLoading(true);
     try {
       const db = getDb();
-      const rows = await listActivities(db, { limit: 500 });
+      const rows = await listActivities(db, { limit: 10000 });
       setActivities(rows);
     } finally {
       setLoading(false);
@@ -160,6 +160,10 @@ export default function InsightsScreen() {
     return selectedWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   })();
 
+  const totalDistanceKm = activities.reduce((sum, a) => sum + a.distanceM, 0) / 1000;
+  const totalDurationHours = activities.reduce((sum, a) => sum + a.movingTimeS, 0) / 3600;
+  const totalActivitiesCount = activities.length;
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -173,7 +177,23 @@ export default function InsightsScreen() {
       style={styles.screen}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
     >
-      <View style={styles.sectionHeader}>
+      <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Lifetime Totals</Text>
+      <View style={styles.lifetimeCard}>
+        <View style={styles.lifetimeStat}>
+          <Text style={styles.lifetimeValue}>{totalDistanceKm.toFixed(1)}</Text>
+          <Text style={styles.lifetimeLabel}>Total km</Text>
+        </View>
+        <View style={styles.lifetimeStat}>
+          <Text style={styles.lifetimeValue}>{totalDurationHours.toFixed(1)}</Text>
+          <Text style={styles.lifetimeLabel}>Total hrs</Text>
+        </View>
+        <View style={styles.lifetimeStat}>
+          <Text style={styles.lifetimeValue}>{totalActivitiesCount}</Text>
+          <Text style={styles.lifetimeLabel}>Activities</Text>
+        </View>
+      </View>
+
+      <View style={[styles.sectionHeader, { marginTop: 16 }]}>
         <Text style={styles.sectionTitle}>Weekly</Text>
         <View style={styles.weekNav}>
           <TouchableOpacity
@@ -283,6 +303,19 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: GH.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { padding: 16, gap: 12 },
+  lifetimeCard: {
+    flexDirection: 'row',
+    backgroundColor: '#0d1f17',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: GH.green,
+    marginBottom: 8,
+    justifyContent: 'space-around',
+  },
+  lifetimeStat: { alignItems: 'center' },
+  lifetimeValue: { fontSize: 24, fontWeight: '800', color: GH.greenBright, fontVariant: ['tabular-nums'] },
+  lifetimeLabel: { fontSize: 13, color: GH.muted, fontWeight: '600', marginTop: 4, textTransform: 'uppercase' },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

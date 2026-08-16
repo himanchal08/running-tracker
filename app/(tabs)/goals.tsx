@@ -14,7 +14,6 @@ import { getDb } from '../../db/client';
 import { listActiveGoals, addGoal, deactivateGoal } from '../../db/queries/goals';
 import { listPRs } from '../../db/queries/personalRecords';
 import { computeGoalsProgress, type GoalProgress } from '../../features/goals/goalEngine';
-import { getDailyMetric } from '../../db/queries/dailyMetrics';
 import type { PersonalRecord, Goal } from '../../db/schema';
 import { PR_LABELS, type PRCategory } from '../../features/analysis/personalRecords';
 import { formatDistance, formatDuration } from '../../features/tracking/utils/formatters';
@@ -55,7 +54,6 @@ export default function GoalsScreen() {
   const [loading, setLoading] = useState(true);
   const [activeGoals, setActiveGoals] = useState<GoalProgress[]>([]);
   const [prs, setPrs] = useState<PersonalRecord[]>([]);
-  const [dailySteps, setDailySteps] = useState(0);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -64,12 +62,9 @@ export default function GoalsScreen() {
       const goals = await listActiveGoals(db);
       const progress = await computeGoalsProgress(db, goals);
       const records = await listPRs(db);
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const metric = await getDailyMetric(db, todayStr);
 
       setActiveGoals(progress);
       setPrs(records);
-      setDailySteps(metric?.steps ?? 0);
     } finally {
       setLoading(false);
     }
@@ -109,9 +104,6 @@ export default function GoalsScreen() {
     [loadData],
   );
 
-  const stepsGoal = 10000;
-  const stepsPct = Math.round((dailySteps / stepsGoal) * 100);
-
   if (loading) {
     return (
       <View style={styles.center}>
@@ -125,13 +117,7 @@ export default function GoalsScreen() {
       style={styles.screen}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24, paddingTop: insets.top + 16 }]}
     >
-      <Text style={styles.pageTitle}>Goals & Habits</Text>
-
-      <View style={styles.dailyCard}>
-        <Text style={styles.dailyTitle}>Daily Steps</Text>
-        <Text style={styles.dailyValue}>{dailySteps.toLocaleString()} <Text style={styles.dailyTarget}>/ {stepsGoal.toLocaleString()}</Text></Text>
-        <ProgressBar pct={stepsPct} />
-      </View>
+      <Text style={styles.pageTitle}>Goals & Milestones</Text>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Active Goals</Text>
@@ -170,9 +156,6 @@ export default function GoalsScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.templateBtn} onPress={() => handleAddGoal('time', 'week', 3600 * 3)}>
           <Text style={styles.templateText}>+ 3h Weekly Active Time</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.templateBtn} onPress={() => handleAddGoal('steps', 'month', 300000)}>
-          <Text style={styles.templateText}>+ 300k Monthly Steps</Text>
         </TouchableOpacity>
       </View>
 

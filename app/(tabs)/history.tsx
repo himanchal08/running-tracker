@@ -106,13 +106,6 @@ function ActivityCard({
         </View>
       </View>
 
-      {activity.gpsQualityScore != null && activity.gpsQualityScore < 0.7 && (
-        <View style={styles.gpsWarning}>
-          <Text style={styles.gpsWarningText}>
-            ⚠ Low GPS quality ({Math.round(activity.gpsQualityScore * 100)}%)
-          </Text>
-        </View>
-      )}
       </View>
     </TouchableOpacity>
   );
@@ -207,15 +200,22 @@ export default function HistoryScreen() {
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top }]}>
         <Text style={styles.headerTitle}>History</Text>
-        {selectionMode ? (
-          <TouchableOpacity onPress={handleDeleteSelected} style={styles.headerBtn}>
-            <Text style={styles.headerBtnTextDestructive}>Delete ({selectedIds.size})</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity onPress={() => setSelectionMode(true)} style={styles.headerBtn}>
-            <Text style={styles.headerBtnText}>Select</Text>
-          </TouchableOpacity>
-        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          {selectionMode ? (
+            <TouchableOpacity onPress={handleDeleteSelected} style={styles.headerBtn}>
+              <Text style={styles.headerBtnTextDestructive}>Delete ({selectedIds.size})</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={() => setSelectionMode(true)} style={styles.headerBtn}>
+              <Text style={styles.headerBtnText}>Select</Text>
+            </TouchableOpacity>
+          )}
+          {!selectionMode && (
+            <TouchableOpacity onPress={() => router.push('/settings' as any)} style={styles.headerBtn}>
+              <Text style={{ fontSize: 22 }}>⚙️</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       <FlatList
         data={activities}
