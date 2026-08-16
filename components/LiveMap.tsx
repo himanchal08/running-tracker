@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 import { useState, useEffect } from 'react';
 import * as MapLibreGL from '@maplibre/maplibre-react-native';
 import * as Location from 'expo-location';
+import { useRecordingStore } from '../store/recordingStore';
 
 MapLibreGL.setAccessToken(null);
 
@@ -11,23 +12,26 @@ interface Props {
 }
 
 export function LiveMap({ routePoints, lineColor = '#fc4c02' }: Props) {
+  const status = useRecordingStore((s) => s.status);
   const [hasPermission, setHasPermission] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     const checkPerm = async () => {
-      const { status } = await Location.getForegroundPermissionsAsync();
-      if (mounted) setHasPermission(status === 'granted');
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (mounted) setHasPermission(status === 'granted');
+      } catch (err) {
+        // ignore
+      }
     };
     checkPerm();
-    
-    // Poll for permission changes since they might grant it by pressing 'Start'
-    const interval = setInterval(checkPerm, 2000);
     return () => {
       mounted = false;
-      clearInterval(interval);
     };
   }, []);
+
+  const shouldFollowUser = hasPermission || status === 'recording';
   const routeLine = {
     type: 'FeatureCollection',
     features: [
@@ -50,7 +54,7 @@ export function LiveMap({ routePoints, lineColor = '#fc4c02' }: Props) {
         attributionEnabled={false}
         mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
       >
-        {hasPermission ? (
+        {shouldFollowUser ? (
           <>
             <MapLibreGL.Camera
               followUserLocation={true}
