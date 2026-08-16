@@ -2,20 +2,35 @@
   "extends": "expo/tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
-    "types": ["jest"],
-    "plugins": [{ "name": "expo/src/static/metro/typescript-service/plugin" }],
+    "types": [
+      "jest"
+    ],
+    "plugins": [
+      {
+        "name": "expo/src/static/metro/typescript-service/plugin"
+      }
+    ],
     "paths": {
-      "@/db/*": ["./db/*"],
-      "@/features/*": ["./features/*"],
-      "@/store/*": ["./store/*"],
-      "@/app/*": ["./app/*"]
+      "@/db/*": [
+        "./db/*"
+      ],
+      "@/features/*": [
+        "./features/*"
+      ],
+      "@/store/*": [
+        "./store/*"
+      ],
+      "@/app/*": [
+        "./app/*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.d.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
