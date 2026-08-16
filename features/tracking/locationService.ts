@@ -85,6 +85,7 @@ async function onLocation(location: Location): Promise<void> {
     liveElapsedTimeS: _pipeline.elapsedTimeS,
     liveElevationGainM: _pipeline.elevationGainM,
     liveGpsAccuracyM: filtered.horizontalAccuracyM,
+    routePoints: [...useRecordingStore.getState().routePoints, [filtered.lon, filtered.lat]],
   });
 }
 

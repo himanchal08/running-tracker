@@ -26,6 +26,8 @@ import {
   gpsAccuracyLabel,
   gpsAccuracyColor,
 } from '../../features/tracking/utils/formatters';
+import { useEffect } from 'react';
+import { LiveMap } from '../../components/LiveMap';
 
 const GH = {
   bg: '#0d1117',
@@ -87,9 +89,23 @@ export default function RecordScreen() {
     liveElapsedTimeS,
     liveElevationGainM,
     liveGpsAccuracyM,
+    routePoints,
   } = useRecordingStore();
 
   const livePace = computePaceSecPerUnit(liveDistanceM, liveMovingTimeS);
+
+  // Smooth ticker for elapsed time between GPS updates
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (status === 'recording') {
+      interval = setInterval(() => {
+        useRecordingStore.setState((s) => ({
+          liveElapsedTimeS: s.liveElapsedTimeS + 1,
+        }));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [status]);
 
   const handleStart = useCallback(async () => {
     const activityId = generateId();
@@ -166,8 +182,11 @@ export default function RecordScreen() {
   }
 
   return (
-    <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
-      <ScrollView contentContainerStyle={styles.liveContainer} bounces={false}>
+    <View style={styles.screen}>
+      <View style={styles.mapContainer}>
+        <LiveMap routePoints={routePoints} />
+      </View>
+      <ScrollView contentContainerStyle={[styles.liveContainer, { paddingBottom: insets.bottom + 24 }]} bounces={false}>
         <GpsIndicator accuracyM={liveGpsAccuracyM} />
 
         <View style={[styles.statusBadge, status === 'paused' && styles.statusBadgePaused]}>
@@ -238,6 +257,11 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: GH.bg,
+  },
+  mapContainer: {
+    height: '45%',
+    borderBottomWidth: 1,
+    borderBottomColor: GH.border,
   },
   idleContainer: {
     flex: 1,

@@ -46,71 +46,7 @@ const HEATMAP_LEVELS = [
   '#39d353',
 ];
 
-function getHeatmapLevel(distanceM: number): number {
-  if (distanceM === 0) return 0;
-  if (distanceM < 2000) return 1;
-  if (distanceM < 5000) return 2;
-  if (distanceM < 10000) return 3;
-  return 4;
-}
-
-function buildHeatmapData(activities: Activity[]): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const a of activities) {
-    const key = a.startedAt.toISOString().slice(0, 10);
-    map.set(key, (map.get(key) ?? 0) + a.distanceM);
-  }
-  return map;
-}
-
-function getHeatmapCells(): string[] {
-  const cells: string[] = [];
-  const today = new Date();
-  for (let i = 51 * 7 + today.getDay(); i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    cells.push(d.toISOString().slice(0, 10));
-  }
-  return cells;
-}
-
-function ActivityHeatmap({ activities }: { activities: Activity[] }) {
-  const data = useMemo(() => buildHeatmapData(activities), [activities]);
-  const cells = useMemo(() => getHeatmapCells(), []);
-
-  const totalActivities = activities.length;
-  const totalDistance = activities.reduce((acc, a) => acc + a.distanceM, 0);
-
-  return (
-    <View style={heatStyles.container}>
-      <View style={heatStyles.header}>
-        <Text style={heatStyles.title}>Activity</Text>
-        <Text style={heatStyles.subtitle}>
-          {totalActivities} activities · {formatDistance(totalDistance)} total
-        </Text>
-      </View>
-      <View style={heatStyles.grid}>
-        {cells.map((date) => {
-          const dist = data.get(date) ?? 0;
-          const level = getHeatmapLevel(dist);
-          return (
-            <View
-              key={date}
-              style={[heatStyles.cell, { backgroundColor: HEATMAP_LEVELS[level] }]}
-            />
-          );
-        })}
-      </View>
-      <View style={heatStyles.legend}>
-        <Text style={heatStyles.legendLabel}>Less</Text>
-        {HEATMAP_LEVELS.map((color, i) => (
-          <View key={i} style={[heatStyles.legendCell, { backgroundColor: color }]} />
-        ))}
-        <Text style={heatStyles.legendLabel}>More</Text>
-      </View>
-    </View>
-  );
-}
+import { ActivityHeatmap } from '../../components/ActivityHeatmap';
 
 function ActivityCard({ activity, onPress }: { activity: Activity; onPress: () => void }) {
   const pace = computePaceSecPerUnit(activity.distanceM, activity.movingTimeS);
@@ -233,58 +169,6 @@ export default function HistoryScreen() {
   );
 }
 
-const heatStyles = StyleSheet.create({
-  container: {
-    backgroundColor: GH.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: GH.border,
-    padding: 16,
-    marginBottom: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: GH.text,
-  },
-  subtitle: {
-    fontSize: 11,
-    color: GH.muted,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 3,
-  },
-  cell: {
-    width: 11,
-    height: 11,
-    borderRadius: 2,
-  },
-  legend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 8,
-    justifyContent: 'flex-end',
-  },
-  legendCell: {
-    width: 11,
-    height: 11,
-    borderRadius: 2,
-  },
-  legendLabel: {
-    fontSize: 10,
-    color: GH.muted,
-    marginHorizontal: 2,
-  },
-});
 
 const styles = StyleSheet.create({
   loadingContainer: {

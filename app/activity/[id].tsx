@@ -12,7 +12,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDb } from '../../db/client';
 import { getActivity, trashActivity } from '../../db/queries/activities';
+import { getPointsForActivity } from '../../db/queries/points';
 import type { Activity } from '../../db/schema';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import { LiveMap } from '../../components/LiveMap';
+import { useRef } from 'react';
 import {
   formatDistance,
   formatDuration,
@@ -32,6 +37,7 @@ const GH = {
   muted: '#8b949e',
   green: '#2ea043',
   greenBright: '#3fb950',
+  greenFaint: '#0d4a1f',
   blue: '#58a6ff',
   red: '#f85149',
   redSurface: '#3d0000',
@@ -62,15 +68,22 @@ export default function ActivityDetailScreen() {
   const insets = useSafeAreaInsets();
 
   const [activity, setActivity] = useState<Activity | null>(null);
+  const [routePoints, setRoutePoints] = useState<[number, number][]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+
+  const viewShotRef = useRef<any>(null);
 
   const loadActivity = useCallback(async () => {
     if (!id) { setNotFound(true); setLoading(false); return; }
     try {
       const db = getDb();
       const row = await getActivity(db, id);
-      if (!row) { setNotFound(true); } else { setActivity(row); }
+      if (!row) { setNotFound(true); } else { 
+        setActivity(row); 
+        const pts = await getPointsForActivity(db, id);
+        setRoutePoints(pts.map(p => [p.lon, p.lat]));
+      }
     } catch (err) {
       console.error('[ActivityDetail] load failed:', err);
       setNotFound(true);
@@ -105,6 +118,23 @@ export default function ActivityDetailScreen() {
     );
   }, [id, router]);
 
+  const handleShare = useCallback(async () => {
+    if (viewShotRef.current && viewShotRef.current.capture) {
+      try {
+        const uri = await viewShotRef.current.capture();
+        const isAvailable = await Sharing.isAvailableAsync();
+        if (isAvailable) {
+          await Sharing.shareAsync(uri);
+        } else {
+          Alert.alert('Sharing not available', 'Cannot share from this device.');
+        }
+      } catch (err) {
+        console.error('[ActivityDetail] share failed:', err);
+        Alert.alert('Error', 'Could not share image.');
+      }
+    }
+  }, []);
+
   if (loading) {
     return (
       <View style={styles.centred}>
@@ -132,7 +162,19 @@ export default function ActivityDetailScreen() {
       style={styles.screen}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
     >
-      <View style={styles.header}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+          <Text style={styles.shareButtonText}>Share ↗</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.9 }}>
+        <View style={styles.shareableContainer}>
+          <View style={styles.mapContainer}>
+            <LiveMap routePoints={routePoints} />
+          </View>
+
+          <View style={styles.header}>
         <Text style={styles.headerEmoji}>{ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}</Text>
         <View>
           <Text style={styles.headerType}>{ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'}</Text>
@@ -160,6 +202,8 @@ export default function ActivityDetailScreen() {
           <Text style={styles.metricLabel}>Avg speed</Text>
         </View>
       </View>
+      </View>
+      </ViewShot>
 
       <SectionCard title="Performance">
         <StatRow label="Max speed" value={formatSpeed(activity.maxSpeedMs)} />
@@ -222,6 +266,36 @@ const styles = StyleSheet.create({
   notFoundText: {
     fontSize: 16,
     color: GH.muted,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 16,
+  },
+  shareButton: {
+    backgroundColor: GH.greenFaint,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: GH.green,
+  },
+  shareButtonText: {
+    color: GH.greenBright,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  shareableContainer: {
+    backgroundColor: GH.bg, // For the screenshot background
+    paddingBottom: 10,
+  },
+  mapContainer: {
+    height: 250,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: GH.border,
   },
   header: {
     flexDirection: 'row',

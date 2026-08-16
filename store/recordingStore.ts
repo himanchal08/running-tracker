@@ -8,6 +8,7 @@ interface LiveStats {
   liveElapsedTimeS: number;
   liveElevationGainM: number;
   liveGpsAccuracyM: number | null;
+  routePoints: [number, number][]; // [longitude, latitude] for MapLibre
 }
 
 interface RecordingState extends LiveStats {
@@ -28,6 +29,7 @@ const INITIAL_STATE: Omit<RecordingState, 'setStatus' | 'setLiveStats' | 'setLiv
   liveElapsedTimeS: 0,
   liveElevationGainM: 0,
   liveGpsAccuracyM: null,
+  routePoints: [],
 };
 
 export const useRecordingStore = create<RecordingState>((set) => ({
