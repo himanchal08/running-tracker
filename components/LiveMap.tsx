@@ -5,11 +5,11 @@ import MapLibreGL from '@maplibre/maplibre-react-native';
 MapLibreGL.setAccessToken(null);
 
 interface Props {
-  routePoints: [number, number][]; // [longitude, latitude]
+  routePoints: [number, number][]; 
   lineColor?: string;
 }
 
-export function LiveMap({ routePoints, lineColor = '#3fb950' }: Props) {
+export function LiveMap({ routePoints, lineColor = '#fc4c02' }: Props) {
   const routeLine = {
     type: 'FeatureCollection',
     features: [

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { type Activity } from '../db/schema';
 import { formatDistance } from '../features/tracking/utils/formatters';
@@ -14,11 +14,11 @@ const GH = {
 };
 
 const HEATMAP_LEVELS = [
-  '#161b22', // level 0 (none)
-  '#0e4429', // level 1
-  '#006d32', // level 2
-  '#26a641', // level 3
-  '#39d353', // level 4
+  '#21262d',    // level 0 (empty cell - lighter than container surface)
+  '#10B98140',  // level 1 (25% opacity emerald)
+  '#10B98170',  // level 2 (45% opacity emerald)
+  '#10B98190',  // level 3 (60% opacity emerald)
+  '#10B981',    // level 4 (solid emerald)
 ];
 
 function getHeatmapLevel(distanceM: number): number {
@@ -94,19 +94,26 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
   const data = useMemo(() => buildHeatmapData(activities), [activities]);
   const weeks = useMemo(() => getHeatmapWeeks(), []);
 
+  const scrollViewRef = useRef<ScrollView>(null);
   const totalActivities = activities.length;
   const totalDistance = activities.reduce((acc, a) => acc + a.distanceM, 0);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Activity</Text>
+        <Text style={styles.title}>Activity in the last year</Text>
         <Text style={styles.subtitle}>
           {totalActivities} activities · {formatDistance(totalDistance)} total
         </Text>
       </View>
       
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView 
+        ref={scrollViewRef}
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        contentContainerStyle={styles.scrollContent}
+        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: false })}
+      >
         <View style={styles.chartWrapper}>
           
           <View style={styles.monthsRow}>
@@ -122,10 +129,9 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
 
           <View style={styles.gridWithDays}>
             <View style={styles.dayLabels}>
-              {/* GitHub day labels align with Monday, Wednesday, Friday (indices 1, 3, 5) */}
-              <Text style={[styles.dayLabelText, { marginTop: 14 }]}>Mon</Text>
-              <Text style={[styles.dayLabelText, { marginTop: 14 }]}>Wed</Text>
-              <Text style={[styles.dayLabelText, { marginTop: 14 }]}>Fri</Text>
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+                <Text key={i} style={styles.dayLabelText}>{day}</Text>
+              ))}
             </View>
 
             <View style={styles.grid}>
@@ -151,14 +157,6 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
           </View>
         </View>
       </ScrollView>
-
-      <View style={styles.legend}>
-        <Text style={styles.legendLabel}>Less</Text>
-        {HEATMAP_LEVELS.map((color, i) => (
-          <View key={i} style={[styles.legendCell, { backgroundColor: color }]} />
-        ))}
-        <Text style={styles.legendLabel}>More</Text>
-      </View>
     </View>
   );
 }
@@ -195,17 +193,18 @@ const styles = StyleSheet.create({
   },
   monthsRow: {
     flexDirection: 'row',
-    marginBottom: 4,
+    marginBottom: 8,
+    height: 16,
   },
   dayLabelsPlaceholder: {
-    width: 32,
+    width: 36,
   },
   monthColumn: {
-    width: 14, // 11 + 3 gap
+    width: 24,
   },
   monthLabelText: {
-    fontSize: 10,
-    color: GH.text,
+    fontSize: 12,
+    color: GH.muted,
     width: 40,
     position: 'absolute',
   },
@@ -213,47 +212,31 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   dayLabels: {
-    width: 32,
+    width: 36,
     flexDirection: 'column',
+    gap: 4,
   },
   dayLabelText: {
-    fontSize: 10,
+    fontSize: 11,
     color: GH.text,
-    height: 11,
-    lineHeight: 11,
+    height: 20,
+    lineHeight: 20,
   },
   grid: {
     flexDirection: 'row',
-    gap: 3,
+    gap: 4,
   },
   weekColumn: {
     flexDirection: 'column',
-    gap: 3,
+    gap: 4,
   },
   cell: {
-    width: 11,
-    height: 11,
-    borderRadius: 2,
+    width: 20,
+    height: 20,
+    borderRadius: 4,
   },
   cellEmpty: {
-    width: 11,
-    height: 11,
-  },
-  legend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 16,
-    justifyContent: 'flex-end',
-  },
-  legendCell: {
-    width: 11,
-    height: 11,
-    borderRadius: 2,
-  },
-  legendLabel: {
-    fontSize: 10,
-    color: GH.muted,
-    marginHorizontal: 2,
+    width: 20,
+    height: 20,
   },
 });
