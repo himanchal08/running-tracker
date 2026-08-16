@@ -14,7 +14,11 @@
         "NSLocationWhenInUseUsageDescription": "Movement Tracker needs location access to record your activities.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "Movement Tracker needs 'Always' location access to track activities while your screen is locked.",
         "NSLocationAlwaysUsageDescription": "Movement Tracker needs 'Always' location access to track activities while your screen is locked.",
-        "UIBackgroundModes": ["location", "fetch", "processing"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch",
+          "processing"
+        ]
       }
     },
     "android": {
@@ -59,6 +63,15 @@
     },
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "3c12c4ab-3daa-4919-9525-24534e0f39f2"
+      }
+    },
+    "owner": "himanchal08"
   }
 }
