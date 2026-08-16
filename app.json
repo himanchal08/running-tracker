@@ -45,15 +45,11 @@
       "expo-router",
       "expo-dev-client",
       [
-        "react-native-background-geolocation",
+        "expo-location",
         {
-          "locationAuthorizationRequest": "Always",
-          "backgroundPermissionRationale": {
-            "title": "Allow Movement Tracker to access this device's location in the background?",
-            "message": "In order to track your activity while the screen is off, enable 'Allow all the time' in the next screen.",
-            "positiveAction": "Change to Allow all the time",
-            "negativeAction": "Cancel"
-          }
+          "locationAlwaysAndWhenInUsePermission": "Allow Movement Tracker to use your location to record activities in the background.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       [

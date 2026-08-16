@@ -5,6 +5,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { getDb } from '../db/client';
 import * as SplashScreen from 'expo-splash-screen';
+import '../features/tracking/backgroundTask';
 
 SplashScreen.preventAutoHideAsync();
 
