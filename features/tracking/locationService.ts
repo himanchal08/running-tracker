@@ -136,7 +136,10 @@ export async function startRecording(activityId: string): Promise<void> {
 
   BackgroundGeolocation.onLocation(onLocation);
   BackgroundGeolocation.onActivityChange(onActivityChange);
-  await BackgroundGeolocation.start();
+    const state = await BackgroundGeolocation.getState();
+    if (!state.enabled) {
+      await BackgroundGeolocation.start();
+    }
 
     useRecordingStore.getState().setStatus('recording', activityId);
   } finally {
@@ -150,7 +153,10 @@ export async function pauseRecording(): Promise<void> {
 }
 
 export async function resumeRecording(): Promise<void> {
-  await BackgroundGeolocation.start();
+  const state = await BackgroundGeolocation.getState();
+  if (!state.enabled) {
+    await BackgroundGeolocation.start();
+  }
   useRecordingStore.getState().setStatus('recording', _activeActivityId);
 }
 
