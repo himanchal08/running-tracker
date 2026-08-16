@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   },
   metricChipText: { fontSize: 12, color: GH.muted, fontWeight: '600' },
   metricChipTextActive: { color: '#ffffff' },
-  scrollContent: { paddingBottom: 4 },
+  scrollContent: { paddingBottom: 4, paddingRight: 150 },
   chartWrapper: { flexDirection: 'column' },
   monthsRow: {
     flexDirection: 'row',

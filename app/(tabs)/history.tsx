@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDb } from '../../db/client';
-import { listActivities } from '../../db/queries/activities';
+import { listActivities, deleteActivities } from '../../db/queries/activities';
 import type { Activity } from '../../db/schema';
 import {
   formatDistance,
@@ -36,6 +37,7 @@ const GH = {
   blue: '#58a6ff',
   yellow: '#d29922',
   yellowFaint: '#2e1f00',
+  red: '#f85149',
 };
 
 const HEATMAP_LEVELS = [
@@ -48,17 +50,37 @@ const HEATMAP_LEVELS = [
 
 import { ActivityHeatmap } from '../../components/ActivityHeatmap';
 
-function ActivityCard({ activity, onPress }: { activity: Activity; onPress: () => void }) {
+function ActivityCard({ 
+  activity, 
+  onPress,
+  onLongPress,
+  selectionMode,
+  isSelected,
+}: { 
+  activity: Activity; 
+  onPress: () => void;
+  onLongPress?: () => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+}) {
   const pace = computePaceSecPerUnit(activity.distanceM, activity.movingTimeS);
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, isSelected && styles.cardSelected]}
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={500}
       activeOpacity={0.75}
       accessibilityRole="button"
       accessibilityLabel={`${ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'} on ${formatActivityDate(activity.startedAt)}`}
     >
+      {selectionMode && (
+        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
+          {isSelected && <Text style={styles.checkboxCheck}>✓</Text>}
+        </View>
+      )}
+      <View style={styles.cardContentWrapper}>
       <View style={styles.cardHeader}>
         <View style={styles.cardTypeRow}>
           <Text style={styles.cardEmoji}>{ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}</Text>
@@ -91,6 +113,7 @@ function ActivityCard({ activity, onPress }: { activity: Activity; onPress: () =
           </Text>
         </View>
       )}
+      </View>
     </TouchableOpacity>
   );
 }
@@ -112,6 +135,9 @@ export default function HistoryScreen() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const loadActivities = useCallback(async () => {
     try {
@@ -133,6 +159,42 @@ export default function HistoryScreen() {
     loadActivities();
   }, [loadActivities]);
 
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      if (next.size === 0) setSelectionMode(false);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    Alert.alert(
+      'Delete Activities',
+      `Are you sure you want to delete ${selectedIds.size} activities?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const db = getDb();
+              await deleteActivities(db, Array.from(selectedIds));
+              setSelectionMode(false);
+              setSelectedIds(new Set());
+              loadActivities();
+            } catch (err) {
+              console.error(err);
+            }
+          },
+        },
+      ]
+    );
+  }, [selectedIds, loadActivities]);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -142,57 +204,113 @@ export default function HistoryScreen() {
   }
 
   return (
-    <FlatList
-      data={activities}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <ActivityCard
-          activity={item}
-          onPress={() => router.push(`/activity/${item.id}`)}
-        />
-      )}
-      ListHeaderComponent={
-        <>
-          <ActivityHeatmap activities={activities} />
-          <TouchableOpacity
-            style={styles.routesEntryBtn}
-            onPress={() => router.push('/routes' as any)}
-            accessibilityRole="button"
-            accessibilityLabel="View all my recognized routes"
-          >
-            <Text style={styles.routesEntryText}>🗺  My Routes</Text>
-            <Text style={styles.routesEntryChevron}>›</Text>
+    <View style={styles.container}>
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <Text style={styles.headerTitle}>History</Text>
+        {selectionMode ? (
+          <TouchableOpacity onPress={handleDeleteSelected} style={styles.headerBtn}>
+            <Text style={styles.headerBtnTextDestructive}>Delete ({selectedIds.size})</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.routesEntryBtn}
-            onPress={() => router.push('/heatmap' as any)}
-            accessibilityRole="button"
-            accessibilityLabel="View geographic heatmap"
-          >
-            <Text style={styles.routesEntryText}>🌍  Geographic Heatmap</Text>
-            <Text style={styles.routesEntryChevron}>›</Text>
+        ) : (
+          <TouchableOpacity onPress={() => setSelectionMode(true)} style={styles.headerBtn}>
+            <Text style={styles.headerBtnText}>Select</Text>
           </TouchableOpacity>
-        </>
-      }
-      ListEmptyComponent={<EmptyHistory />}
-      contentContainerStyle={[
-        styles.listContent,
-        activities.length === 0 && styles.listContentEmpty,
-        { paddingBottom: insets.bottom + 16 },
-      ]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={GH.greenBright}
-        />
-      }
-    />
+        )}
+      </View>
+      <FlatList
+        data={activities}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <ActivityCard
+            activity={item}
+            selectionMode={selectionMode}
+            isSelected={selectedIds.has(item.id)}
+            onLongPress={() => {
+              setSelectionMode(true);
+              toggleSelection(item.id);
+            }}
+            onPress={() => {
+              if (selectionMode) {
+                toggleSelection(item.id);
+              } else {
+                router.push(`/activity/${item.id}`);
+              }
+            }}
+          />
+        )}
+        ListHeaderComponent={
+          <>
+            <ActivityHeatmap activities={activities} />
+            <TouchableOpacity
+              style={styles.routesEntryBtn}
+              onPress={() => router.push('/routes' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="View all my recognized routes"
+            >
+              <Text style={styles.routesEntryText}>🗺  My Routes</Text>
+              <Text style={styles.routesEntryChevron}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.routesEntryBtn}
+              onPress={() => router.push('/heatmap' as any)}
+              accessibilityRole="button"
+              accessibilityLabel="View geographic heatmap"
+            >
+              <Text style={styles.routesEntryText}>🌍  Geographic Heatmap</Text>
+              <Text style={styles.routesEntryChevron}>›</Text>
+            </TouchableOpacity>
+          </>
+        }
+        ListEmptyComponent={<EmptyHistory />}
+        contentContainerStyle={[
+          styles.listContent,
+          activities.length === 0 && styles.listContentEmpty,
+          { paddingBottom: insets.bottom + 16 },
+        ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={GH.greenBright}
+          />
+        }
+      />
+    </View>
   );
 }
 
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: GH.bg,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: GH.text,
+    letterSpacing: -0.5,
+  },
+  headerBtn: {
+    padding: 8,
+  },
+  headerBtnText: {
+    color: GH.blue,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  headerBtnTextDestructive: {
+    color: GH.red,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
@@ -201,7 +319,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     backgroundColor: GH.bg,
     flexGrow: 1,
   },
@@ -209,12 +326,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
+    flexDirection: 'row',
     backgroundColor: GH.surface,
     borderRadius: 12,
     padding: 16,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: GH.border,
+  },
+  cardSelected: {
+    borderColor: GH.green,
+    backgroundColor: '#0d1f17',
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: GH.muted,
+    marginRight: 12,
+    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: GH.greenBright,
+    borderColor: GH.greenBright,
+  },
+  checkboxCheck: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  cardContentWrapper: {
+    flex: 1,
   },
   cardHeader: {
     flexDirection: 'row',

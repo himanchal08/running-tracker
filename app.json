@@ -47,6 +47,7 @@
       [
         "react-native-background-geolocation",
         {
+          "license": "DUMMY_KEY_FOR_TESTING",
           "locationAuthorizationRequest": "Always",
           "backgroundPermissionRationale": {
             "title": "Allow Movement Tracker to access this device's location in the background?",
