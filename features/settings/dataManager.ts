@@ -4,15 +4,23 @@ import * as DocumentPicker from 'expo-document-picker';
 import { getDb } from '../../db/client';
 import { listActivities } from '../../db/queries/activities';
 import type { Db } from '../../db/client';
+import { Platform } from 'react-native';
+import { ANDROID_DATABASE_PATH, IOS_LIBRARY_PATH } from '@op-engineering/op-sqlite';
+
+function getDbPath(): string {
+  const dbName = 'movement_tracker.db';
+  if (Platform.OS === 'ios') {
+    return `file://${IOS_LIBRARY_PATH}/LocalDatabase/${dbName}`;
+  }
+  return `file://${ANDROID_DATABASE_PATH}/${dbName}`;
+}
 
 export async function exportData(): Promise<boolean> {
   try {
     const db = getDb();
     const activities = await listActivities(db, { limit: 10000 });
     
-    const dbName = 'running_tracker.db';
-    const dbDir = FileSystem.documentDirectory + 'SQLite';
-    const dbPath = `${dbDir}/${dbName}`;
+    const dbPath = getDbPath();
     
     const exists = await FileSystem.getInfoAsync(dbPath);
     if (!exists.exists) {
@@ -57,9 +65,7 @@ export async function importData(): Promise<boolean> {
       return false;
     }
 
-    const dbName = 'running_tracker.db';
-    const dbDir = FileSystem.documentDirectory + 'SQLite';
-    const dbPath = `${dbDir}/${dbName}`;
+    const dbPath = getDbPath();
 
     await FileSystem.copyAsync({ from: file.uri, to: dbPath });
     
