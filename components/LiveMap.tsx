@@ -59,7 +59,7 @@ export function LiveMap({ routePoints, lineColor = '#fc4c02' }: Props) {
             <MapLibreGL.Camera
               followUserLocation={true}
               followZoomLevel={16}
-              followUserMode={MapLibreGL.UserTrackingMode.FollowWithCourse}
+              followUserMode={MapLibreGL.UserTrackingMode.Follow}
             />
             <MapLibreGL.UserLocation 
               visible={true} 

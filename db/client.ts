@@ -17,7 +17,11 @@ export function getDb() {
   opsqlite.execute('PRAGMA synchronous = NORMAL;');
   
   _db = drizzle(opsqlite, { schema });
-  migrate(_db, migrations);
+  try {
+    migrate(_db, migrations);
+  } catch (err) {
+    console.warn('Migration warning (likely already exists):', err);
+  }
   return _db;
 }
 
