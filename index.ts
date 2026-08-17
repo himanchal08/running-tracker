@@ -4,3 +4,7 @@ if (typeof window !== 'undefined' && !window.location) {
 }
 
 import 'expo-router/entry';
+import { registerWidgetTaskHandler } from 'react-native-android-widget';
+import { widgetTaskHandler } from './widget/widgetTaskHandler';
+
+registerWidgetTaskHandler(widgetTaskHandler);

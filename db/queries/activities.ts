@@ -107,6 +107,57 @@ export async function restoreActivity(db: Db, id: string): Promise<void> {
   await recomputeAllPRs(db);
 }
 
+export async function getCurrentStreak(db: Db): Promise<{ current: number, isAliveToday: boolean }> {
+  // Fetch all activity dates descending
+  const acts = await db
+    .select({ startedAt: activities.startedAt })
+    .from(activities)
+    .where(isNull(activities.trashedAt))
+    .orderBy(desc(activities.startedAt));
+
+  if (acts.length === 0) return { current: 0, isAliveToday: false };
+
+  const dates = acts.map(a => new Date(a.startedAt).toISOString().slice(0, 10));
+  // Unique dates sorted descending
+  const uniqueDates = Array.from(new Set(dates)).sort((a, b) => b.localeCompare(a));
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().slice(0, 10);
+
+  // If the last activity wasn't today or yesterday, the streak is broken
+  if (uniqueDates[0] !== todayStr && uniqueDates[0] !== yesterdayStr) {
+    return { current: 0, isAliveToday: false };
+  }
+
+  let streak = 0;
+  let currentDate = new Date(); // Start checking from today
+  const isAliveToday = uniqueDates[0] === todayStr;
+
+  // We loop backwards day by day. If that date exists in uniqueDates, streak++
+  // If not, and it's not today (meaning we missed today but ran yesterday), we break.
+  for (let i = 0; i < 3650; i++) { // Max 10 year streak safeguard
+    const checkDateStr = currentDate.toISOString().slice(0, 10);
+    
+    if (uniqueDates.includes(checkDateStr)) {
+      streak++;
+    } else {
+      // If we are checking today and it's missing, that's fine (streak relies on yesterday)
+      if (i === 0) {
+        // do nothing, check yesterday
+      } else {
+        // We missed a day, streak ends here
+        break;
+      }
+    }
+    // move back one day
+    currentDate.setDate(currentDate.getDate() - 1);
+  }
+
+  return { current: streak, isAliveToday };
+}
+
 export async function recomputeAllPRs(db: Db): Promise<void> {
   try {
     await clearAllPRs(db);

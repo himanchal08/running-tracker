@@ -56,9 +56,23 @@
       [
         "@maplibre/maplibre-react-native",
         {}
-      ],
       "expo-sharing",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "MovementWidget",
+              "label": "Movement Tracker",
+              "minWidth": "110dp",
+              "minHeight": "110dp",
+              "description": "Weekly goals and stats",
+              "previewImage": "./assets/android-chrome-512x512.png"
+            }
+          ]
+        }
+      ]
     ],
     "scheme": "movement-tracker",
     "web": {

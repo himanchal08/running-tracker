@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { getDb } from '../../db/client';
 import { listActiveGoals, addGoal, deactivateGoal } from '../../db/queries/goals';
 import { listPRs } from '../../db/queries/personalRecords';
+import { getCurrentStreak } from '../../db/queries/activities';
 import { computeGoalsProgress, type GoalProgress } from '../../features/goals/goalEngine';
 import type { PersonalRecord, Goal } from '../../db/schema';
 import { PR_LABELS, type PRCategory } from '../../features/analysis/personalRecords';
@@ -58,6 +59,7 @@ export default function GoalsScreen() {
   const [loading, setLoading] = useState(true);
   const [activeGoals, setActiveGoals] = useState<GoalProgress[]>([]);
   const [prs, setPrs] = useState<PersonalRecord[]>([]);
+  const [streak, setStreak] = useState({ current: 0, isAliveToday: false });
 
   // Modal State
   const [modalVisible, setModalVisible] = useState(false);
@@ -72,9 +74,11 @@ export default function GoalsScreen() {
       const goals = await listActiveGoals(db);
       const progress = await computeGoalsProgress(db, goals);
       const records = await listPRs(db);
+      const currentStreak = await getCurrentStreak(db);
 
       setActiveGoals(progress);
       setPrs(records);
+      setStreak(currentStreak);
     } finally {
       setLoading(false);
     }
@@ -142,7 +146,13 @@ export default function GoalsScreen() {
       <ScrollView
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24, paddingTop: insets.top + 16 }]}
       >
-        <Text style={styles.pageTitle}>Goals & Milestones</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.pageTitle}>Goals</Text>
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakEmoji}>{streak.isAliveToday || streak.current > 0 ? '🔥' : '🧊'}</Text>
+            <Text style={[styles.streakNumber, streak.isAliveToday && { color: '#ff9800' }]}>{streak.current}</Text>
+          </View>
+        </View>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Active Goals</Text>
@@ -303,7 +313,11 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: GH.bg },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   content: { padding: 16 },
-  pageTitle: { fontSize: 24, fontWeight: '800', color: GH.text, marginBottom: 24, letterSpacing: -0.5 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  pageTitle: { fontSize: 24, fontWeight: '800', color: GH.text, letterSpacing: -0.5 },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1c1917', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#431407' },
+  streakEmoji: { fontSize: 16, marginRight: 4 },
+  streakNumber: { fontSize: 16, fontWeight: '800', color: GH.muted },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 8 },
   sectionTitle: { fontSize: 13, fontWeight: '700', color: GH.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
   addBtn: { backgroundColor: GH.greenFaint, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: GH.green },

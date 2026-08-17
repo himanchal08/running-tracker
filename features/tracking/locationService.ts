@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import notifee, { AndroidImportance } from '@notifee/react-native';
 import { IngestionPipeline } from './ingestion/pipeline';
 import type { RawPoint } from './ingestion/types';
 import { DEFAULT_INGESTION_CONFIG } from './ingestion/types';
@@ -99,6 +100,28 @@ export async function handleLocationUpdate(location: Location.LocationObject): P
     liveGpsAccuracyM: filtered.horizontalAccuracyM,
     routePoints: [...useRecordingStore.getState().routePoints, [filtered.lon, filtered.lat]],
   });
+
+  try {
+    const distStr = (_pipeline.cumulativeDistanceM / 1000).toFixed(2);
+    const hrs = Math.floor(_pipeline.movingTimeS / 3600);
+    const mins = Math.floor((_pipeline.movingTimeS % 3600) / 60).toString().padStart(2, '0');
+    const secs = Math.floor(_pipeline.movingTimeS % 60).toString().padStart(2, '0');
+    const timeStr = hrs > 0 ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
+
+    await notifee.displayNotification({
+      id: 'active_recording',
+      title: 'Recording Activity',
+      body: `Distance: ${distStr} km | Time: ${timeStr}`,
+      android: {
+        channelId: 'recording',
+        ongoing: true,
+        onlyAlertOnce: true, // Prevents buzzing on every update
+        smallIcon: 'ic_launcher',
+      },
+    });
+  } catch (err) {
+    console.error('Notifee update failed:', err);
+  }
 }
 
 let _isStarting = false;
@@ -107,6 +130,12 @@ export async function startRecording(activityId: string): Promise<void> {
   if (_isStarting) return;
   _isStarting = true;
   try {
+    const servicesEnabled = await Location.hasServicesEnabledAsync();
+    if (!servicesEnabled) {
+      alert('Location Disabled\nPlease enable location services in your phone settings to record an activity.');
+      return;
+    }
+
     const { status: fgStatus } = await Location.requestForegroundPermissionsAsync();
     if (fgStatus !== 'granted') {
       alert('Permission to access location was denied');
@@ -138,6 +167,28 @@ export async function startRecording(activityId: string): Promise<void> {
       },
     });
 
+    try {
+      const channelId = await notifee.createChannel({
+        id: 'recording',
+        name: 'Active Recording',
+        importance: AndroidImportance.LOW, // Low importance so it doesn't pop up over screen constantly
+      });
+      await notifee.displayNotification({
+        id: 'active_recording',
+        title: 'Recording Activity',
+        body: 'Distance: 0.00 km | Time: 00:00',
+        android: {
+          channelId,
+          ongoing: true,
+          color: '#3fb950',
+          onlyAlertOnce: true,
+          smallIcon: 'ic_launcher',
+        },
+      });
+    } catch (err) {
+      console.error('Notifee start failed:', err);
+    }
+
     useRecordingStore.getState().setStatus('recording', activityId);
   } finally {
     _isStarting = false;
@@ -149,6 +200,11 @@ export async function pauseRecording(): Promise<void> {
   if (hasStarted) {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
   }
+  
+  try {
+    await notifee.cancelNotification('active_recording');
+  } catch (err) {}
+  
   useRecordingStore.getState().setStatus('paused', _activeActivityId);
 }
 
@@ -178,6 +234,10 @@ export async function stopRecording(): Promise<void> {
   if (hasStarted) {
     await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
   }
+
+  try {
+    await notifee.cancelNotification('active_recording');
+  } catch (err) {}
 
   const db = getDb();
 
