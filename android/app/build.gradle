@@ -82,8 +82,6 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
-    ndkVersion "26.1.10909125" // NDK 27.1 crashes on Windows; 26.1 is stable
-
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
@@ -94,19 +92,6 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0.0"
-        ndk {
-            // Only build for 64-bit ARM (all phones since 2016).
-            // The Windows NDK compiler crashes on armeabi-v7a (32-bit).
-            abiFilters "arm64-v8a"
-        }
-        externalNativeBuild {
-            cmake {
-                // NDK 27 clang++ crashes on Windows with -O2 -flto=thin (LTO).
-                // Force -O1 -fno-lto globally to work around the compiler bug.
-                cppFlags "-O1 -fno-lto"
-                arguments "-DCMAKE_BUILD_PARALLEL_LEVEL=1"
-            }
-        }
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
