@@ -112,24 +112,25 @@ function ActivityCard({
         </View>
 
         <View style={styles.cardStats}>
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{formatDistance(activity.distanceM)}</Text>
-            <Text style={styles.statLabel}>Distance</Text>
+          <View style={styles.statRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{formatDistance(activity.distanceM)}</Text>
+              <Text style={styles.statLabel}>Distance</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{formatDuration(activity.movingTimeS)}</Text>
+              <Text style={styles.statLabel}>Moving time</Text>
+            </View>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{formatDuration(activity.movingTimeS)}</Text>
-            <Text style={styles.statLabel}>Moving time</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{paceDisplay}</Text>
-            <Text style={styles.statLabel}>Pace</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.stat}>
-            <Text style={styles.statValue}>{Math.round(activity.calorieEstimate || 0)}</Text>
-            <Text style={styles.statLabel}>Calories</Text>
+          <View style={styles.statRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{paceDisplay}</Text>
+              <Text style={styles.statLabel}>Pace</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text style={styles.statValue}>{Math.round(activity.calorieEstimate || 0)}</Text>
+              <Text style={styles.statLabel}>Calories</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -415,15 +416,22 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   cardStats: {
+    gap: 12,
+  },
+  statRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   stat: {
     flex: 1,
+    backgroundColor: '#1c2128', // Slightly lighter than surface
+    borderRadius: 8,
+    paddingVertical: 10,
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     color: GH.text,
     letterSpacing: -0.3,
@@ -433,11 +441,7 @@ const styles = StyleSheet.create({
     color: GH.muted,
     fontWeight: '500',
     marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: GH.border,
+    textTransform: 'uppercase',
   },
   gpsWarning: {
     marginTop: 10,

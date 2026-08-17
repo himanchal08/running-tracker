@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     alignItems: 'center',
-    minWidth: 140,
+    minWidth: '45%',
     flex: 1,
     borderWidth: 1,
     borderColor: GH.border,

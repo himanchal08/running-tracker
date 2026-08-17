@@ -256,23 +256,23 @@ export default function InsightsScreen() {
         </View>
       ) : null}
 
-      <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+      <View style={[styles.sectionHeader, { marginTop: 24, marginBottom: 8 }]}>
         <Text style={styles.sectionTitle}>Trends</Text>
-        <View style={styles.periodToggle}>
-          {PERIOD_OPTIONS.map((opt) => (
-            <TouchableOpacity
-              key={opt}
-              style={[styles.periodBtn, periodOption === opt && styles.periodBtnActive]}
-              onPress={() => setPeriodOption(opt)}
-              accessibilityRole="button"
-              accessibilityLabel={`Show ${opt} trends`}
-            >
-              <Text style={[styles.periodBtnText, periodOption === opt && styles.periodBtnTextActive]}>
-                {opt}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      </View>
+      <View style={styles.periodToggle}>
+        {PERIOD_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt}
+            style={[styles.periodBtn, periodOption === opt && styles.periodBtnActive]}
+            onPress={() => setPeriodOption(opt)}
+            accessibilityRole="button"
+            accessibilityLabel={`Show ${opt} trends`}
+          >
+            <Text style={[styles.periodBtnText, periodOption === opt && styles.periodBtnTextActive]}>
+              {opt}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       <View style={styles.trendsContainer}>
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   },
   metricTile: {
     flex: 1,
-    minWidth: '30%',
+    minWidth: '45%',
     backgroundColor: GH.surface,
     borderRadius: 10,
     padding: 12,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     borderColor: GH.green,
   },
   summaryText: { color: GH.text, fontSize: 14, lineHeight: 20 },
-  periodToggle: { flexDirection: 'row', gap: 4 },
+  periodToggle: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   periodBtn: {
     paddingVertical: 4,
     paddingHorizontal: 10,
