@@ -12,6 +12,12 @@ notifee.onBackgroundEvent(async ({ type, detail }) => {
   // Empty handler to satisfy notifee requirement
 });
 
+notifee.registerForegroundService((notification) => {
+  return new Promise(() => {
+    // Keep foreground service alive until explicitly stopped
+  });
+});
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {

@@ -114,6 +114,7 @@ export async function handleLocationUpdate(location: Location.LocationObject): P
       body: `Distance: ${distStr} km | Time: ${timeStr}`,
       android: {
         channelId: 'recording',
+        asForegroundService: true,
         ongoing: true,
         onlyAlertOnce: true, // Prevents buzzing on every update
         smallIcon: 'ic_launcher',
@@ -166,6 +167,7 @@ export async function startRecording(activityId: string): Promise<void> {
         body: 'Distance: 0.00 km | Time: 00:00',
         android: {
           channelId,
+          asForegroundService: true,
           ongoing: true,
           color: '#3fb950',
           onlyAlertOnce: true,
@@ -182,11 +184,6 @@ export async function startRecording(activityId: string): Promise<void> {
       distanceInterval: 5,
       deferredUpdatesInterval: 1000,
       showsBackgroundLocationIndicator: true,
-      foregroundService: {
-        notificationTitle: 'Movement Tracker',
-        notificationBody: 'Recording your activity...',
-        notificationColor: '#3fb950',
-      },
     });
 
     useRecordingStore.getState().setStatus('recording', activityId);
@@ -202,7 +199,7 @@ export async function pauseRecording(): Promise<void> {
   }
   
   try {
-    await notifee.cancelNotification('active_recording');
+    await notifee.stopForegroundService();
   } catch (err) {}
   
   useRecordingStore.getState().setStatus('paused', _activeActivityId);
@@ -211,17 +208,33 @@ export async function pauseRecording(): Promise<void> {
 export async function resumeRecording(): Promise<void> {
   const hasStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
   if (!hasStarted) {
+    try {
+      const channelId = await notifee.createChannel({
+        id: 'recording',
+        name: 'Active Recording',
+        importance: AndroidImportance.LOW,
+      });
+      await notifee.displayNotification({
+        id: 'active_recording',
+        title: 'Recording Activity',
+        body: 'Resuming...',
+        android: {
+          channelId,
+          asForegroundService: true,
+          ongoing: true,
+          color: '#3fb950',
+          onlyAlertOnce: true,
+          smallIcon: 'ic_launcher',
+        },
+      });
+    } catch (err) {}
+
     await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
       accuracy: Location.Accuracy.BestForNavigation,
       timeInterval: 1000,
       distanceInterval: 5,
       deferredUpdatesInterval: 1000,
       showsBackgroundLocationIndicator: true,
-      foregroundService: {
-        notificationTitle: 'Movement Tracker',
-        notificationBody: 'Recording your activity...',
-        notificationColor: '#3fb950',
-      },
     });
   }
   useRecordingStore.getState().setStatus('recording', _activeActivityId);
@@ -236,7 +249,7 @@ export async function stopRecording(): Promise<void> {
   }
 
   try {
-    await notifee.cancelNotification('active_recording');
+    await notifee.stopForegroundService();
   } catch (err) {}
 
   const db = getDb();
