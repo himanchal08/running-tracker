@@ -45,6 +45,7 @@ export async function finaliseActivity(
     | 'maxSpeedMs'
     | 'gpsQualityScore'
     | 'calorieEstimate'
+    | 'type'
   >,
 ): Promise<Activity> {
   const avgSpeedMs =

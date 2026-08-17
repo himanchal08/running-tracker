@@ -185,7 +185,19 @@ export async function stopRecording(): Promise<void> {
   const avgSpeedMs = _pipeline.movingTimeS > 0
     ? _pipeline.cumulativeDistanceM / _pipeline.movingTimeS
     : null;
-  const calorieEstimate = estimateCalories('unknown', weightKg, _pipeline.movingTimeS, avgSpeedMs);
+    
+  let detectedType: 'running' | 'walking' | 'cycling' | 'unknown' = 'unknown';
+  if (avgSpeedMs !== null) {
+    if (avgSpeedMs < 2.0) { // < 7.2 km/h
+      detectedType = 'walking';
+    } else if (avgSpeedMs < 6.5) { // < 23.4 km/h
+      detectedType = 'running';
+    } else {
+      detectedType = 'cycling';
+    }
+  }
+
+  const calorieEstimate = estimateCalories(detectedType, weightKg, _pipeline.movingTimeS, avgSpeedMs);
 
   await finaliseActivity(
     db,
@@ -200,6 +212,7 @@ export async function stopRecording(): Promise<void> {
       maxSpeedMs: null,
       gpsQualityScore: computeGpsQualityScore(),
       calorieEstimate,
+      type: detectedType,
     },
   );
 
