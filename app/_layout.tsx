@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { requestWidgetUpdate } from 'react-native-android-widget';
+import { widgetTaskHandler } from '../widget/widgetTaskHandler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
@@ -28,6 +30,23 @@ export default function RootLayout() {
       await getDb();
       setDbReady(true);
       await SplashScreen.hideAsync();
+      
+      // Force update the widget when the app opens
+      try {
+        const db = getDb();
+        const { getCurrentStreak, listActivities } = await import('../db/queries/activities');
+        const { MovementWidget } = await import('../widget/Widget');
+        
+        const streakResult = await getCurrentStreak(db);
+        const activities = await listActivities(db, { limit: 1 });
+        
+        await requestWidgetUpdate({
+          widgetName: 'MovementWidget',
+          renderWidget: () => <MovementWidget streak={streakResult.current} lastActivity={activities[0]} />,
+        });
+      } catch (err) {
+        console.error('Failed to update widget on launch', err);
+      }
     };
     init();
   }, []);
