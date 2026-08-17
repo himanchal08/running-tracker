@@ -124,7 +124,12 @@ function ActivityCard({
           <View style={styles.statDivider} />
           <View style={styles.stat}>
             <Text style={styles.statValue}>{paceDisplay}</Text>
-            <Text style={styles.statLabel}>Min/km pace</Text>
+            <Text style={styles.statLabel}>Pace</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{Math.round(activity.calorieEstimate || 0)}</Text>
+            <Text style={styles.statLabel}>Calories</Text>
           </View>
         </View>
       </View>

@@ -243,14 +243,15 @@ export default function ActivityDetailScreen() {
               <Text style={styles.metricLabel}>Avg pace</Text>
             </View>
             <View style={styles.metricTile}>
-              <Text style={styles.metricValue}>{formatSpeed(activity.avgSpeedMs)}</Text>
-              <Text style={styles.metricLabel}>Avg speed</Text>
+              <Text style={styles.metricValue}>{Math.round(activity.calorieEstimate || 0)}</Text>
+              <Text style={styles.metricLabel}>Calories (kcal)</Text>
             </View>
           </View>
         </View>
       </ViewShot>
 
       <SectionCard title="Performance">
+        <StatRow label="Avg speed" value={formatSpeed(activity.avgSpeedMs)} />
         <StatRow label="Max speed" value={formatSpeed(activity.maxSpeedMs)} />
         <StatRow label="Elapsed time" value={formatDuration(activity.elapsedTimeS)} />
         <StatRow label="Moving time" value={formatDuration(activity.movingTimeS)} />
