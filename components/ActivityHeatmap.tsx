@@ -32,6 +32,9 @@ const GH = {
   green: '#2ea043',
   greenBright: '#3fb950',
   blue: '#58a6ff',
+  yellow: '#d29922',
+  purple: '#e040fb',
+  orange: '#f59e0b',
 };
 
 const HEATMAP_COLORS: Record<CalendarMetric, [string, string, string, string, string]> = {
@@ -42,6 +45,9 @@ const HEATMAP_COLORS: Record<CalendarMetric, [string, string, string, string, st
   count:     ['#21262d', '#1b4332', '#2d6a4f', '#40916c', '#52b788'],
 };
 
+// Remove 'count' from visible tabs
+const METRICS: CalendarMetric[] = ['distance', 'time', 'calories', 'elevation'];
+
 const METRIC_LABELS: Record<CalendarMetric, string> = {
   distance: 'Distance',
   time: 'Time',
@@ -50,7 +56,13 @@ const METRIC_LABELS: Record<CalendarMetric, string> = {
   count: 'Count',
 };
 
-const METRICS: CalendarMetric[] = ['distance', 'time', 'calories', 'elevation', 'count'];
+const METRIC_UNITS: Record<CalendarMetric, string> = {
+  distance: 'km',
+  time: 'duration',
+  calories: 'kcal',
+  elevation: 'm',
+  count: 'act.',
+};
 
 interface Week {
   dates: (Date | null)[];
@@ -99,7 +111,7 @@ function formatMetricValue(value: number, metric: CalendarMetric): string {
   switch (metric) {
     case 'distance':  return formatDistance(value);
     case 'time':      return formatDuration(value);
-    case 'calories':  return `${Math.round(value)} kcal`;
+    case 'calories':  return value > 0 ? `${Math.round(value)} kcal` : '--';
     case 'elevation': return `${Math.round(value)} m`;
     case 'count':     return `${value} act.`;
   }
@@ -109,10 +121,12 @@ function DayModal({
   dayData,
   visible,
   onClose,
+  metric,
 }: {
   dayData: DayData | null;
   visible: boolean;
   onClose: () => void;
+  metric: CalendarMetric;
 }) {
   const router = useRouter();
 
@@ -123,6 +137,12 @@ function DayModal({
     day: 'numeric',
     month: 'long',
   });
+
+  // Day totals per metric
+  const dayDistance = dayData.activities.reduce((s, a) => s + a.distanceM, 0);
+  const dayTime = dayData.activities.reduce((s, a) => s + a.movingTimeS, 0);
+  const dayCalories = dayData.activities.reduce((s, a) => s + (a.calorieEstimate ?? 0), 0);
+  const dayElevation = dayData.activities.reduce((s, a) => s + a.elevationGainM, 0);
 
   return (
     <Modal
@@ -139,6 +159,32 @@ function DayModal({
           <Text style={styles.modalSubLabel}>
             {dayData.activities.length} {dayData.activities.length === 1 ? 'activity' : 'activities'}
           </Text>
+
+          {/* Day summary row */}
+          <View style={styles.dayStatRow}>
+            <View style={styles.dayStat}>
+              <Text style={[styles.dayStatValue, { color: GH.greenBright }]}>{formatDistance(dayDistance)}</Text>
+              <Text style={styles.dayStatLabel}>Distance</Text>
+            </View>
+            <View style={styles.dayStatDivider} />
+            <View style={styles.dayStat}>
+              <Text style={[styles.dayStatValue, { color: GH.blue }]}>{formatDuration(dayTime)}</Text>
+              <Text style={styles.dayStatLabel}>Time</Text>
+            </View>
+            <View style={styles.dayStatDivider} />
+            <View style={styles.dayStat}>
+              <Text style={[styles.dayStatValue, { color: GH.purple }]}>
+                {dayCalories > 0 ? `${Math.round(dayCalories)} kcal` : '--'}
+              </Text>
+              <Text style={styles.dayStatLabel}>Calories</Text>
+            </View>
+            <View style={styles.dayStatDivider} />
+            <View style={styles.dayStat}>
+              <Text style={[styles.dayStatValue, { color: GH.orange }]}>{Math.round(dayElevation)} m</Text>
+              <Text style={styles.dayStatLabel}>Elevation</Text>
+            </View>
+          </View>
+
           <FlatList
             data={dayData.activities}
             keyExtractor={(a) => a.id}
@@ -161,6 +207,7 @@ function DayModal({
                   </Text>
                   <Text style={styles.modalActivityStat}>
                     {formatDistance(item.distanceM)} · {formatDuration(item.movingTimeS)}
+                    {(item.calorieEstimate ?? 0) > 0 ? ` · ${Math.round(item.calorieEstimate!)} kcal` : ''}
                   </Text>
                 </View>
                 <Text style={styles.modalActivityChevron}>›</Text>
@@ -307,7 +354,7 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
 
         {monthly.length > 0 && (
           <View style={styles.monthlySectionHeader}>
-            <Text style={styles.monthlySectionTitle}>MONTHLY TOTALS</Text>
+            <Text style={styles.monthlySectionTitle}>MONTHLY BREAKDOWN</Text>
           </View>
         )}
         <ScrollView
@@ -315,14 +362,38 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.monthlyScrollContent}
         >
-          {monthly.slice(-6).map((m) => (
-            <View key={`${m.year}-${m.monthIndex}`} style={styles.monthlyCard}>
-              <Text style={styles.monthlyCardMonth}>{m.month.slice(0, 3)}</Text>
-              <Text style={styles.monthlyCardYear}>{m.year}</Text>
-              <Text style={styles.monthlyCardValue}>{formatDistance(m.distanceM)}</Text>
-              <Text style={styles.monthlyCardSub}>{m.count} act.</Text>
-            </View>
-          ))}
+          {monthly.slice(-6).map((m) => {
+            let primaryValue = '';
+            let primaryColor = GH.greenBright;
+            switch (metric) {
+              case 'distance':
+                primaryValue = formatDistance(m.distanceM);
+                primaryColor = GH.greenBright;
+                break;
+              case 'time':
+                primaryValue = formatDuration(m.movingTimeS);
+                primaryColor = GH.blue;
+                break;
+              case 'calories':
+                primaryValue = m.caloriesKcal > 0 ? `${Math.round(m.caloriesKcal)} kcal` : '--';
+                primaryColor = GH.purple;
+                break;
+              case 'elevation':
+                primaryValue = `${Math.round(m.elevationGainM)} m`;
+                primaryColor = GH.orange;
+                break;
+              default:
+                primaryValue = formatDistance(m.distanceM);
+            }
+            return (
+              <View key={`${m.year}-${m.monthIndex}`} style={styles.monthlyCard}>
+                <Text style={styles.monthlyCardMonth}>{m.month.slice(0, 3)}</Text>
+                <Text style={styles.monthlyCardYear}>{m.year}</Text>
+                <Text style={[styles.monthlyCardValue, { color: primaryColor }]}>{primaryValue}</Text>
+                <Text style={styles.monthlyCardSub}>{m.count} {m.count === 1 ? 'activity' : 'activities'}</Text>
+              </View>
+            );
+          })}
         </ScrollView>
       </View>
 
@@ -330,6 +401,7 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
         dayData={selectedDay}
         visible={modalVisible}
         onClose={closeModal}
+        metric={metric}
       />
     </>
   );
@@ -448,12 +520,13 @@ const styles = StyleSheet.create({
     borderColor: GH.border,
     padding: 10,
     alignItems: 'center',
-    minWidth: 72,
+    minWidth: 80,
   },
   monthlyCardMonth: { fontSize: 13, fontWeight: '700', color: GH.text },
   monthlyCardYear: { fontSize: 10, color: GH.muted, marginBottom: 6 },
-  monthlyCardValue: { fontSize: 13, fontWeight: '700', color: GH.greenBright },
+  monthlyCardValue: { fontSize: 13, fontWeight: '700' },
   monthlyCardSub: { fontSize: 10, color: GH.muted, marginTop: 2 },
+  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -486,7 +559,36 @@ const styles = StyleSheet.create({
   modalSubLabel: {
     fontSize: 13,
     color: GH.muted,
+    marginBottom: 12,
+  },
+  dayStatRow: {
+    flexDirection: 'row',
+    backgroundColor: GH.bg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: GH.border,
+    paddingVertical: 10,
     marginBottom: 16,
+  },
+  dayStat: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dayStatValue: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  dayStatLabel: {
+    fontSize: 9,
+    color: GH.muted,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  dayStatDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: GH.border,
+    alignSelf: 'center',
   },
   modalActivityRow: {
     flexDirection: 'row',

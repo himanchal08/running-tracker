@@ -183,7 +183,7 @@ export default function RecordScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.mapContainer}>
-        <LiveMap routePoints={routePoints} />
+        <LiveMap routePoints={routePoints} liveMode={true} />
       </View>
       <ScrollView contentContainerStyle={[styles.liveContainer, { paddingBottom: insets.bottom + 24 }]} bounces={false}>
         <GpsIndicator accuracyM={liveGpsAccuracyM} />

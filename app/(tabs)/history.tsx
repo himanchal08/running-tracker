@@ -50,6 +50,14 @@ const HEATMAP_LEVELS = [
 
 import { ActivityHeatmap } from '../../components/ActivityHeatmap';
 
+const TYPE_BADGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  running:  { bg: '#0d2a0d', text: '#3fb950', border: '#2ea043' },
+  walking:  { bg: '#0d1f30', text: '#58a6ff', border: '#1f6feb' },
+  cycling:  { bg: '#2e1f00', text: '#d29922', border: '#9e6a03' },
+  hiking:   { bg: '#1d1f0d', text: '#b5bd00', border: '#7d8200' },
+  unknown:  { bg: '#1a1a1a', text: '#8b949e', border: '#30363d' },
+};
+
 function ActivityCard({ 
   activity, 
   onPress,
@@ -64,6 +72,15 @@ function ActivityCard({
   isSelected?: boolean;
 }) {
   const pace = computePaceSecPerUnit(activity.distanceM, activity.movingTimeS);
+  const badgeColors = TYPE_BADGE_COLORS[activity.type] ?? TYPE_BADGE_COLORS.unknown;
+
+  // Format pace as a human-readable string with unit label
+  const paceDisplay = (() => {
+    if (!pace || pace <= 0) return '--';
+    const mins = Math.floor(pace / 60);
+    const secs = Math.round(pace % 60).toString().padStart(2, '0');
+    return `${mins}:${secs}`;
+  })();
 
   return (
     <TouchableOpacity
@@ -81,31 +98,35 @@ function ActivityCard({
         </View>
       )}
       <View style={styles.cardContentWrapper}>
-      <View style={styles.cardHeader}>
-        <View style={styles.cardTypeRow}>
-          <Text style={styles.cardEmoji}>{ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}</Text>
-          <Text style={styles.cardType}>{ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'}</Text>
+        <View style={styles.cardHeader}>
+          <View style={[
+            styles.typeBadge,
+            { backgroundColor: badgeColors.bg, borderColor: badgeColors.border }
+          ]}>
+            <Text style={styles.typeBadgeEmoji}>{ACTIVITY_TYPE_EMOJI[activity.type] ?? '📍'}</Text>
+            <Text style={[styles.typeBadgeText, { color: badgeColors.text }]}>
+              {ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'}
+            </Text>
+          </View>
+          <Text style={styles.cardDate}>{formatActivityDate(activity.startedAt)}</Text>
         </View>
-        <Text style={styles.cardDate}>{formatActivityDate(activity.startedAt)}</Text>
-      </View>
 
-      <View style={styles.cardStats}>
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{formatDistance(activity.distanceM)}</Text>
-          <Text style={styles.statLabel}>Distance</Text>
+        <View style={styles.cardStats}>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{formatDistance(activity.distanceM)}</Text>
+            <Text style={styles.statLabel}>Distance</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{formatDuration(activity.movingTimeS)}</Text>
+            <Text style={styles.statLabel}>Moving time</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{paceDisplay}</Text>
+            <Text style={styles.statLabel}>Min/km pace</Text>
+          </View>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{formatDuration(activity.movingTimeS)}</Text>
-          <Text style={styles.statLabel}>Moving time</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.stat}>
-          <Text style={styles.statValue}>{formatPace(pace)}</Text>
-          <Text style={styles.statLabel}>Avg pace</Text>
-        </View>
-      </View>
-
       </View>
     </TouchableOpacity>
   );
@@ -367,18 +388,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  cardTypeRow: {
+  typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 4,
   },
-  cardEmoji: {
-    fontSize: 18,
+  typeBadgeEmoji: {
+    fontSize: 13,
   },
-  cardType: {
-    fontSize: 15,
+  typeBadgeText: {
+    fontSize: 12,
     fontWeight: '700',
-    color: GH.text,
   },
   cardDate: {
     fontSize: 12,

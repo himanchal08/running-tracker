@@ -4,6 +4,8 @@ import type { RawPoint } from './ingestion/types';
 import { DEFAULT_INGESTION_CONFIG } from './ingestion/types';
 import { getDb } from '../../db/client';
 import { insertPoint, getPointsForActivity } from '../../db/queries/points';
+import { estimateCalories } from '../analysis/calorieEstimator';
+import { getBodyWeightKg } from '../settings/userProfile';
 import {
   updateActivityLiveStats,
   finaliseActivity,
@@ -178,6 +180,13 @@ export async function stopRecording(): Promise<void> {
   }
 
   const db = getDb();
+
+  const weightKg = await getBodyWeightKg();
+  const avgSpeedMs = _pipeline.movingTimeS > 0
+    ? _pipeline.cumulativeDistanceM / _pipeline.movingTimeS
+    : null;
+  const calorieEstimate = estimateCalories('unknown', weightKg, _pipeline.movingTimeS, avgSpeedMs);
+
   await finaliseActivity(
     db,
     _activeActivityId,
@@ -190,6 +199,7 @@ export async function stopRecording(): Promise<void> {
       elevationLossM: _pipeline.elevationLossM,
       maxSpeedMs: null,
       gpsQualityScore: computeGpsQualityScore(),
+      calorieEstimate,
     },
   );
 
