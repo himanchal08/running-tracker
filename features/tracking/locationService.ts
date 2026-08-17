@@ -154,19 +154,6 @@ export async function startRecording(activityId: string): Promise<void> {
     _totalRawPoints = 0;
     _acceptedPoints = 0;
 
-    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
-      accuracy: Location.Accuracy.BestForNavigation,
-      timeInterval: 1000,
-      distanceInterval: 5,
-      deferredUpdatesInterval: 1000,
-      showsBackgroundLocationIndicator: true,
-      foregroundService: {
-        notificationTitle: 'Movement Tracker',
-        notificationBody: 'Recording your activity...',
-        notificationColor: '#3fb950',
-      },
-    });
-
     try {
       const channelId = await notifee.createChannel({
         id: 'recording',
@@ -188,6 +175,19 @@ export async function startRecording(activityId: string): Promise<void> {
     } catch (err) {
       console.error('Notifee start failed:', err);
     }
+
+    await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+      accuracy: Location.Accuracy.BestForNavigation,
+      timeInterval: 1000,
+      distanceInterval: 5,
+      deferredUpdatesInterval: 1000,
+      showsBackgroundLocationIndicator: true,
+      foregroundService: {
+        notificationTitle: 'Movement Tracker',
+        notificationBody: 'Recording your activity...',
+        notificationColor: '#3fb950',
+      },
+    });
 
     useRecordingStore.getState().setStatus('recording', activityId);
   } finally {

@@ -5,7 +5,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { getDb } from '../db/client';
 import * as SplashScreen from 'expo-splash-screen';
+import notifee, { EventType } from '@notifee/react-native';
 import '../features/tracking/backgroundTask';
+
+notifee.onBackgroundEvent(async ({ type, detail }) => {
+  // Empty handler to satisfy notifee requirement
+});
 
 SplashScreen.preventAutoHideAsync();
 
