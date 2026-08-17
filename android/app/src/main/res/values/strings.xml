@@ -1,0 +1,4 @@
+<resources>
+  <string name="app_name">Movement Tracker</string>
+  <string name="widget_movementwidget_description" translatable="false">Weekly goals and stats</string>
+</resources>
