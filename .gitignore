@@ -49,3 +49,8 @@ private-movement-tracker-prd.md
 .gemini/
 .vscode/
 .idea/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
