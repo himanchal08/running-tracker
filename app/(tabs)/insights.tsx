@@ -165,7 +165,7 @@ export default function InsightsScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 24 }]}
     >
       <Text style={[styles.sectionTitle, { marginBottom: 16 }]}>LIFETIME TOTALS</Text>
       <View style={styles.lifetimeCard}>
@@ -349,14 +349,14 @@ const styles = StyleSheet.create({
   deltaDown: { fontSize: 10, color: M.danger, fontWeight: '700' },
   deltaNeutral: { fontSize: 10, color: M.textMuted },
   summaryCard: {
-    backgroundColor: M.cardMid,
+    backgroundColor: M.surfaceBright,
     borderRadius: RADIUS.card,
     padding: 20,
-    borderLeftWidth: 3,
-    borderLeftColor: M.teal,
     marginBottom: 32,
+    borderWidth: 1,
+    borderColor: M.borderFaint,
   },
-  summaryText: { color: M.textOnSurface, fontSize: 14, lineHeight: 22, fontStyle: 'italic' },
+  summaryText: { color: M.textPrimary, fontSize: 14, lineHeight: 22 },
   periodToggle: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   periodBtn: {
     paddingVertical: 8,
@@ -371,11 +371,12 @@ const styles = StyleSheet.create({
   periodBtnTextActive: { color: M.teal },
   trendsContainer: { gap: 12 },
   noTrends: {
-    backgroundColor: M.surface,
+    backgroundColor: 'transparent',
     borderRadius: RADIUS.card,
     padding: 24,
     borderWidth: 1,
     borderColor: M.borderFaint,
+    borderStyle: 'dashed',
   },
   noTrendsText: { color: M.textSecondary, fontSize: 14, textAlign: 'center' },
   trendCard: {
@@ -387,8 +388,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: M.borderFaint,
-    borderLeftWidth: 3,
-    borderLeftColor: M.teal,
   },
   trendIconWrap: {
     width: 32,

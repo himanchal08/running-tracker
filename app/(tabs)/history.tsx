@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { M, RADIUS } from '../../constants/theme';
 import { getDb } from '../../db/client';
-import { listActivities, deleteActivities } from '../../db/queries/activities';
+import { listActivities, deleteActivities, getCurrentStreak } from '../../db/queries/activities';
 import type { Activity } from '../../db/schema';
 import {
   formatDistance,
@@ -131,12 +131,16 @@ export default function HistoryScreen() {
   
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [streak, setStreak] = useState({ current: 0, isAliveToday: false });
 
   const loadActivities = useCallback(async () => {
     try {
       const db = getDb();
       const rows = await listActivities(db);
       setActivities(rows);
+      
+      const currentStreak = await getCurrentStreak(db);
+      setStreak(currentStreak);
     } catch (err) {
       console.error('[HistoryScreen] Failed to load activities:', err);
     } finally {
@@ -199,11 +203,27 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <Text style={[styles.headerTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>History</Text>
-        <View style={styles.streakBadge}>
-          <Text style={styles.streakEmoji}>🔥</Text>
-          <Text style={styles.streakText}>7 days</Text>
-        </View>
+        {selectionMode ? (
+          <>
+            <TouchableOpacity onPress={() => { setSelectionMode(false); setSelectedIds(new Set()); }} style={styles.headerBtn}>
+              <Text style={styles.headerBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>
+              {selectedIds.size} Selected
+            </Text>
+            <TouchableOpacity onPress={handleDeleteSelected} style={styles.headerBtn} disabled={selectedIds.size === 0}>
+              <Text style={[styles.headerBtnTextDestructive, selectedIds.size === 0 && { opacity: 0.5 }]}>Delete</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={[styles.headerTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>History</Text>
+            <View style={styles.streakBadge}>
+              <Text style={styles.streakEmoji}>{streak.isAliveToday || streak.current > 0 ? '🔥' : '🧊'}</Text>
+              <Text style={[styles.streakText, streak.isAliveToday && { color: M.amber }]}>{streak.current} days</Text>
+            </View>
+          </>
+        )}
       </View>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>RECENT RUNS</Text>
@@ -367,20 +387,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   card: {
-    flexDirection: 'column',
-    backgroundColor: M.card,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: M.surface,
     borderRadius: RADIUS.card,
-    padding: 24,
+    padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: M.border,
-    borderLeftWidth: 4,
-    borderLeftColor: M.teal,
+    borderColor: M.borderFaint,
     gap: 16,
   },
   cardSelected: {
-    borderColor: M.teal,
-    backgroundColor: M.cardMid,
+    borderColor: M.tealBorder,
+    backgroundColor: M.tealFaint,
   },
   checkbox: {
     width: 24,
@@ -388,8 +407,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: M.textSecondary,
-    marginRight: 16,
-    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -408,10 +425,8 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    borderTopWidth: 1,
-    borderTopColor: M.borderFaint,
-    paddingTop: 16,
+    alignItems: 'center',
+    marginBottom: 20,
   },
   cardTitle: {
     fontSize: 14,
@@ -429,6 +444,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 8,
+    marginBottom: 16,
   },
   cardDistanceValue: {
     fontSize: 40,
@@ -451,7 +467,6 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: RADIUS.pill,
     borderWidth: 1,
-    marginBottom: 8,
   },
   typeBadgeEmoji: {
     fontSize: 12,
@@ -492,9 +507,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+    marginTop: 80,
   },
   emptyEmoji: {
     fontSize: 56,
+    lineHeight: 64,
     marginBottom: 16,
   },
   emptyTitle: {

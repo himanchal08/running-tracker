@@ -4,18 +4,17 @@ import { M, RADIUS } from '../../constants/theme';
 
 // ─── Custom Icons ──────────────────────────────────────────────────────────
 
-function RecordIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
+function RecordIcon({ color }: { color: ColorValue }) {
   return (
     <View style={styles.iconWrap}>
-      <View style={[styles.recordOuter, focused && { borderColor: M.teal }]}>
+      <View style={[styles.recordOuter, { borderColor: color as string }]}>
         <View style={[styles.recordInner, { backgroundColor: color as string }]} />
       </View>
-      {focused && <View style={styles.activeDot} />}
     </View>
   );
 }
 
-function HistoryIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
+function HistoryIcon({ color }: { color: ColorValue }) {
   return (
     <View style={styles.iconWrap}>
       <View style={styles.historyLines}>
@@ -26,12 +25,11 @@ function HistoryIcon({ color, focused }: { color: ColorValue; focused: boolean }
           />
         ))}
       </View>
-      {focused && <View style={styles.activeDot} />}
     </View>
   );
 }
 
-function InsightsIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
+function InsightsIcon({ color }: { color: ColorValue }) {
   const heights = [6, 10, 16, 12, 8];
   return (
     <View style={styles.iconWrap}>
@@ -43,12 +41,11 @@ function InsightsIcon({ color, focused }: { color: ColorValue; focused: boolean 
           />
         ))}
       </View>
-      {focused && <View style={styles.activeDot} />}
     </View>
   );
 }
 
-function GoalsIcon({ color, focused }: { color: ColorValue; focused: boolean }) {
+function GoalsIcon({ color }: { color: ColorValue }) {
   return (
     <View style={styles.iconWrap}>
       <View style={styles.trophyWrap}>
@@ -56,7 +53,6 @@ function GoalsIcon({ color, focused }: { color: ColorValue; focused: boolean }) 
         <View style={[styles.trophyStep, { backgroundColor: color as string }]} />
         <View style={[styles.trophyBase, { backgroundColor: color as string }]} />
       </View>
-      {focused && <View style={styles.activeDot} />}
     </View>
   );
 }
@@ -71,7 +67,6 @@ export default function TabLayout() {
         tabBarInactiveTintColor: M.textSecondary,
         tabBarStyle: styles.tabBar,
         tabBarLabelStyle: styles.tabLabel,
-        tabBarShowLabel: false,
         headerShown: false,
       }}
     >
@@ -79,8 +74,8 @@ export default function TabLayout() {
         name="record"
         options={{
           title: 'Record',
-          tabBarIcon: ({ color, focused }) => (
-            <RecordIcon color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <RecordIcon color={color} />
           ),
         }}
       />
@@ -88,8 +83,8 @@ export default function TabLayout() {
         name="history"
         options={{
           title: 'History',
-          tabBarIcon: ({ color, focused }) => (
-            <HistoryIcon color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <HistoryIcon color={color} />
           ),
         }}
       />
@@ -97,8 +92,8 @@ export default function TabLayout() {
         name="insights"
         options={{
           title: 'Insights',
-          tabBarIcon: ({ color, focused }) => (
-            <InsightsIcon color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <InsightsIcon color={color} />
           ),
         }}
       />
@@ -106,8 +101,8 @@ export default function TabLayout() {
         name="goals"
         options={{
           title: 'Goals',
-          tabBarIcon: ({ color, focused }) => (
-            <GoalsIcon color={color} focused={focused} />
+          tabBarIcon: ({ color }) => (
+            <GoalsIcon color={color} />
           ),
         }}
       />
@@ -119,38 +114,24 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    position: 'absolute',
-    bottom: 20,
-    left: 58,
-    right: 58,
-    height: 66,
-    borderRadius: RADIUS.pill,
-    backgroundColor: 'rgba(15,14,28,0.92)',
+    backgroundColor: M.surface,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: M.borderFaint,
+    height: 60,
     elevation: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    paddingBottom: 0,
-    paddingTop: 0,
+    shadowOpacity: 0,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   tabLabel: {
-    display: 'none',
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 4,
   },
   iconWrap: {
     alignItems: 'center',
-    gap: 4,
-    paddingTop: 4,
-  },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: M.teal,
+    justifyContent: 'center',
+    height: 24,
   },
 
   // Record icon

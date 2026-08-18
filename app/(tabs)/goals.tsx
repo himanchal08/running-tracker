@@ -127,6 +127,8 @@ export default function GoalsScreen() {
     [loadData],
   );
 
+  const [fontsLoaded] = useFonts({ PlayfairDisplay_700Bold });
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -134,8 +136,6 @@ export default function GoalsScreen() {
       </View>
     );
   }
-
-  const [fontsLoaded] = useFonts({ PlayfairDisplay_700Bold });
 
   return (
     <View style={styles.screen}>
@@ -162,10 +162,10 @@ export default function GoalsScreen() {
             <Text style={styles.emptyStateEmoji}>🎯</Text>
             <Text style={styles.emptyStateTitle}>No Active Goals</Text>
             <Text style={styles.emptyStateSubtitle}>
-              Did you know? Setting a specific goal increases your chance of running consistently by over 80%. Let's set a target!
+              Setting a specific goal increases your chance of running consistently. Let's set a target!
             </Text>
             <TouchableOpacity style={styles.emptyStateBtn} onPress={() => setModalVisible(true)}>
-              <Text style={styles.emptyStateBtnText}>Create Your First Goal</Text>
+              <Text style={styles.emptyStateBtnText}>Create a Goal</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -191,19 +191,23 @@ export default function GoalsScreen() {
           ))
         )}
 
-        <Text style={[styles.sectionTitle, { marginTop: 32, marginBottom: 12 }]}>Quick Templates</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 32, marginBottom: 12 }]}>QUICK TEMPLATES</Text>
         <View style={styles.templatesContainer}>
           <TouchableOpacity style={styles.templateBtn} onPress={() => handleAddGoal('distance', 'week', 20000)}>
-            <Text style={styles.templateText}>🏃 20km Weekly</Text>
+            <Text style={styles.templateEmoji}>🏃</Text>
+            <Text style={styles.templateText}>20km Weekly</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.templateBtn} onPress={() => handleAddGoal('time', 'week', 3600 * 3)}>
-            <Text style={styles.templateText}>⏱️ 3h Weekly Time</Text>
+            <Text style={styles.templateEmoji}>⏱️</Text>
+            <Text style={styles.templateText}>3h Weekly Time</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.templateBtn} onPress={() => handleAddGoal('elevation', 'month', 500)}>
-            <Text style={styles.templateText}>🏔️ 500m Monthly Climb</Text>
+            <Text style={styles.templateEmoji}>🏔️</Text>
+            <Text style={styles.templateText}>500m Monthly Climb</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.templateBtn} onPress={() => handleAddGoal('activities', 'month', 15)}>
-            <Text style={styles.templateText}>🔥 15 Activities / Month</Text>
+            <Text style={styles.templateEmoji}>🔥</Text>
+            <Text style={styles.templateText}>15 Activities / Mo</Text>
           </TouchableOpacity>
         </View>
 
@@ -310,22 +314,24 @@ const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: M.bgAlt },
   content: { padding: 20 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
-  pageTitle: { fontSize: 28, fontWeight: '700', color: M.textPrimary, letterSpacing: -0.5 },
+  pageTitle: { fontSize: 32, fontWeight: '700', color: M.textPrimary, letterSpacing: -1 },
   streakBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: M.surfaceBright, paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: M.borderSubtle },
   streakEmoji: { fontSize: 14, marginRight: 6 },
   streakNumber: { fontSize: 14, fontWeight: '600', color: M.textPrimary },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16, marginTop: 8 },
-  sectionTitle: { fontSize: 12, fontWeight: '600', color: M.textSecondary, textTransform: 'uppercase', letterSpacing: 0.1 },
-  addBtn: { backgroundColor: M.tealFaint, paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: M.tealBorder },
-  addBtnText: { color: M.teal, fontSize: 12, fontWeight: '600' },
+  sectionTitle: { fontSize: 12, fontWeight: '600', color: M.textSecondary, textTransform: 'uppercase', letterSpacing: 1 },
+  addBtn: { backgroundColor: M.surfaceBright, paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: M.border },
+  addBtnText: { color: M.textPrimary, fontSize: 12, fontWeight: '600' },
   progressTrack: { height: 8, backgroundColor: M.cardMid, borderRadius: 4, overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: 4 },
-  emptyState: { backgroundColor: M.card, padding: 32, borderRadius: RADIUS.card, borderWidth: 1, borderColor: M.border, alignItems: 'center' },
-  emptyStateEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyStateTitle: { fontSize: 18, fontWeight: '700', color: M.textPrimary, marginBottom: 12 },
-  emptyStateSubtitle: { fontSize: 14, color: M.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
-  emptyStateBtn: { backgroundColor: M.teal, paddingHorizontal: 24, paddingVertical: 14, borderRadius: RADIUS.pill },
-  emptyStateBtnText: { color: M.bg, fontWeight: '700', fontSize: 14 },
+  
+  // Empty State
+  emptyState: { backgroundColor: 'transparent', padding: 24, borderRadius: RADIUS.card, borderWidth: 1, borderColor: M.borderFaint, borderStyle: 'dashed', alignItems: 'center', marginVertical: 8 },
+  emptyStateEmoji: { fontSize: 32, marginBottom: 16 },
+  emptyStateTitle: { fontSize: 16, fontWeight: '600', color: M.textPrimary, marginBottom: 8 },
+  emptyStateSubtitle: { fontSize: 13, color: M.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
+  emptyStateBtn: { backgroundColor: M.tealFaint, paddingHorizontal: 20, paddingVertical: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: M.tealBorder },
+  emptyStateBtnText: { color: M.teal, fontWeight: '600', fontSize: 13 },
   emptyCard: { backgroundColor: M.surface, padding: 24, borderRadius: RADIUS.card, borderWidth: 1, borderColor: M.borderFaint },
   emptyText: { color: M.textSecondary, fontSize: 14, textAlign: 'center' },
   goalCard: {
@@ -344,9 +350,22 @@ const styles = StyleSheet.create({
   goalTitle: { fontSize: 15, fontWeight: '600', color: M.textPrimary },
   goalPct: { fontSize: 15, fontWeight: '700', color: M.teal },
   goalLabel: { fontSize: 13, color: M.textSecondary, marginBottom: 16 },
-  templatesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  templateBtn: { backgroundColor: M.surface, borderWidth: 1, borderColor: M.borderFaint, paddingVertical: 14, paddingHorizontal: 16, borderRadius: RADIUS.card },
-  templateText: { color: M.textPrimary, fontSize: 13, fontWeight: '500' },
+  
+  // Templates
+  templatesContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
+  templateBtn: { 
+    backgroundColor: M.surface, 
+    borderWidth: 1, 
+    borderColor: M.borderFaint, 
+    paddingVertical: 20, 
+    paddingHorizontal: 16, 
+    borderRadius: RADIUS.card, 
+    width: '48%', 
+    alignItems: 'center', 
+    gap: 12 
+  },
+  templateEmoji: { fontSize: 24 },
+  templateText: { color: M.textPrimary, fontSize: 13, fontWeight: '600', textAlign: 'center' },
   prGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   prTile: {
     flex: 1,

@@ -22,27 +22,14 @@ import {
   getYearlyTotals,
 } from '../features/analysis/calendarStats';
 
-const GH = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surfaceElevated: '#1c2128',
-  border: '#30363d',
-  text: '#c9d1d9',
-  muted: '#8b949e',
-  green: '#2ea043',
-  greenBright: '#3fb950',
-  blue: '#58a6ff',
-  yellow: '#d29922',
-  purple: '#e040fb',
-  orange: '#f59e0b',
-};
+import { M } from '../constants/theme';
 
 const HEATMAP_COLORS: Record<CalendarMetric, [string, string, string, string, string]> = {
-  distance:  ['#21262d', '#0e4429', '#006d32', '#26a641', '#39d353'],
-  time:      ['#21262d', '#0d2b4f', '#0a4b8c', '#1567c4', '#4493f8'],
-  calories:  ['#21262d', '#4a1942', '#7d1f6e', '#b42e9e', '#e040fb'],
-  elevation: ['#21262d', '#3b2800', '#6d4c00', '#a87200', '#f59e0b'],
-  count:     ['#21262d', '#1b4332', '#2d6a4f', '#40916c', '#52b788'],
+  distance:  [M.surfaceBright, '#0f3c3a', '#125c58', '#168a83', M.teal],
+  time:      [M.surfaceBright, '#14254b', '#183a75', '#1e5bb8', M.blue],
+  calories:  [M.surfaceBright, '#3a162b', '#621a42', '#96205e', M.danger],
+  elevation: [M.surfaceBright, '#3c280f', '#664012', '#9f6016', M.amber],
+  count:     [M.surfaceBright, '#0f3c3a', '#125c58', '#168a83', M.teal],
 };
 
 // Remove 'count' from visible tabs
@@ -163,24 +150,24 @@ function DayModal({
           {/* Day summary row */}
           <View style={styles.dayStatRow}>
             <View style={styles.dayStat}>
-              <Text style={[styles.dayStatValue, { color: GH.greenBright }]}>{formatDistance(dayDistance)}</Text>
+              <Text style={[styles.dayStatValue, { color: M.teal }]}>{formatDistance(dayDistance)}</Text>
               <Text style={styles.dayStatLabel}>Distance</Text>
             </View>
             <View style={styles.dayStatDivider} />
             <View style={styles.dayStat}>
-              <Text style={[styles.dayStatValue, { color: GH.blue }]}>{formatDuration(dayTime)}</Text>
+              <Text style={[styles.dayStatValue, { color: M.blue }]}>{formatDuration(dayTime)}</Text>
               <Text style={styles.dayStatLabel}>Time</Text>
             </View>
             <View style={styles.dayStatDivider} />
             <View style={styles.dayStat}>
-              <Text style={[styles.dayStatValue, { color: GH.purple }]}>
+              <Text style={[styles.dayStatValue, { color: M.danger }]}>
                 {dayCalories > 0 ? `${Math.round(dayCalories)} kcal` : '--'}
               </Text>
               <Text style={styles.dayStatLabel}>Calories</Text>
             </View>
             <View style={styles.dayStatDivider} />
             <View style={styles.dayStat}>
-              <Text style={[styles.dayStatValue, { color: GH.orange }]}>{Math.round(dayElevation)} m</Text>
+              <Text style={[styles.dayStatValue, { color: M.amber }]}>{Math.round(dayElevation)} m</Text>
               <Text style={styles.dayStatLabel}>Elevation</Text>
             </View>
           </View>
@@ -364,23 +351,23 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
         >
           {monthly.slice(-6).map((m) => {
             let primaryValue = '';
-            let primaryColor = GH.greenBright;
+            let primaryColor: string = M.teal;
             switch (metric) {
               case 'distance':
                 primaryValue = formatDistance(m.distanceM);
-                primaryColor = GH.greenBright;
+                primaryColor = M.teal;
                 break;
               case 'time':
                 primaryValue = formatDuration(m.movingTimeS);
-                primaryColor = GH.blue;
+                primaryColor = M.blue;
                 break;
               case 'calories':
                 primaryValue = m.caloriesKcal > 0 ? `${Math.round(m.caloriesKcal)} kcal` : '--';
-                primaryColor = GH.purple;
+                primaryColor = M.danger;
                 break;
               case 'elevation':
                 primaryValue = `${Math.round(m.elevationGainM)} m`;
-                primaryColor = GH.orange;
+                primaryColor = M.amber;
                 break;
               default:
                 primaryValue = formatDistance(m.distanceM);
@@ -409,11 +396,11 @@ export function ActivityHeatmap({ activities }: { activities: Activity[] }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: GH.surface,
-    borderRadius: 12,
+    backgroundColor: M.card,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: GH.border,
-    padding: 14,
+    borderColor: M.border,
+    padding: 16,
     marginBottom: 16,
     overflow: 'hidden',
   },
@@ -424,12 +411,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: GH.border,
+    borderBottomColor: M.borderFaint,
   },
   yearlyItem: { alignItems: 'center' },
-  yearlyValue: { fontSize: 17, fontWeight: '700', color: GH.text },
-  yearlyLabel: { fontSize: 10, color: GH.muted, marginTop: 2, fontWeight: '500' },
-  yearlyDivider: { width: 1, height: 32, backgroundColor: GH.border },
+  yearlyValue: { fontSize: 17, fontWeight: '700', color: M.textPrimary },
+  yearlyLabel: { fontSize: 10, color: M.textSecondary, marginTop: 2, fontWeight: '500' },
+  yearlyDivider: { width: 1, height: 32, backgroundColor: M.borderFaint },
   metricToggleRow: {
     flexDirection: 'row',
     gap: 6,
@@ -441,15 +428,15 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: GH.border,
-    backgroundColor: GH.bg,
+    borderColor: M.border,
+    backgroundColor: M.surfaceBright,
   },
   metricChipActive: {
-    backgroundColor: GH.green,
-    borderColor: GH.greenBright,
+    backgroundColor: M.teal,
+    borderColor: M.teal,
   },
-  metricChipText: { fontSize: 12, color: GH.muted, fontWeight: '600' },
-  metricChipTextActive: { color: '#ffffff' },
+  metricChipText: { fontSize: 12, color: M.textSecondary, fontWeight: '600' },
+  metricChipTextActive: { color: M.bg },
   scrollContent: { paddingBottom: 4, paddingRight: 150 },
   chartWrapper: { flexDirection: 'column' },
   monthsRow: {
@@ -461,7 +448,7 @@ const styles = StyleSheet.create({
   monthColumn: { width: 22 },
   monthLabelText: {
     fontSize: 10,
-    color: GH.muted,
+    color: M.textSecondary,
     width: 36,
     position: 'absolute',
   },
@@ -474,7 +461,7 @@ const styles = StyleSheet.create({
   },
   dayLabelText: {
     fontSize: 9,
-    color: GH.muted,
+    color: M.textSecondary,
     height: 18,
     lineHeight: 18,
   },
@@ -493,19 +480,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
     justifyContent: 'flex-end',
   },
-  legendLabel: { fontSize: 10, color: GH.muted },
+  legendLabel: { fontSize: 10, color: M.textSecondary },
   legendCell: { width: 14, height: 14, borderRadius: 2 },
   monthlySectionHeader: {
     marginTop: 14,
     marginBottom: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: GH.border,
+    borderTopColor: M.borderFaint,
     paddingTop: 12,
   },
   monthlySectionTitle: {
     fontSize: 10,
     fontWeight: '700',
-    color: GH.muted,
+    color: M.textSecondary,
     letterSpacing: 0.8,
   },
   monthlyScrollContent: {
@@ -514,30 +501,30 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   monthlyCard: {
-    backgroundColor: GH.surfaceElevated,
+    backgroundColor: M.surfaceBright,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.border,
     padding: 10,
     alignItems: 'center',
     minWidth: 80,
   },
-  monthlyCardMonth: { fontSize: 13, fontWeight: '700', color: GH.text },
-  monthlyCardYear: { fontSize: 10, color: GH.muted, marginBottom: 6 },
+  monthlyCardMonth: { fontSize: 13, fontWeight: '700', color: M.textPrimary },
+  monthlyCardYear: { fontSize: 10, color: M.textSecondary, marginBottom: 6 },
   monthlyCardValue: { fontSize: 13, fontWeight: '700' },
-  monthlyCardSub: { fontSize: 10, color: GH.muted, marginTop: 2 },
+  monthlyCardSub: { fontSize: 10, color: M.textSecondary, marginTop: 2 },
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: GH.surface,
+    backgroundColor: M.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.border,
     borderBottomWidth: 0,
     padding: 20,
     paddingBottom: 36,
@@ -546,27 +533,27 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: GH.border,
+    backgroundColor: M.border,
     alignSelf: 'center',
     marginBottom: 16,
   },
   modalDateLabel: {
     fontSize: 18,
     fontWeight: '700',
-    color: GH.text,
+    color: M.textPrimary,
     marginBottom: 2,
   },
   modalSubLabel: {
     fontSize: 13,
-    color: GH.muted,
+    color: M.textSecondary,
     marginBottom: 12,
   },
   dayStatRow: {
     flexDirection: 'row',
-    backgroundColor: GH.bg,
+    backgroundColor: M.bg,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.border,
     paddingVertical: 10,
     marginBottom: 16,
   },
@@ -580,14 +567,14 @@ const styles = StyleSheet.create({
   },
   dayStatLabel: {
     fontSize: 9,
-    color: GH.muted,
+    color: M.textSecondary,
     marginTop: 2,
     fontWeight: '500',
   },
   dayStatDivider: {
     width: 1,
     height: 28,
-    backgroundColor: GH.border,
+    backgroundColor: M.border,
     alignSelf: 'center',
   },
   modalActivityRow: {
@@ -595,35 +582,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: GH.border,
+    borderTopColor: M.borderFaint,
   },
   modalActivityEmoji: { fontSize: 22, marginRight: 12 },
   modalActivityInfo: { flex: 1 },
   modalActivityType: {
     fontSize: 15,
     fontWeight: '600',
-    color: GH.text,
+    color: M.textPrimary,
   },
   modalActivityStat: {
     fontSize: 12,
-    color: GH.muted,
+    color: M.textSecondary,
     marginTop: 2,
   },
   modalActivityChevron: {
     fontSize: 20,
-    color: GH.muted,
+    color: M.textSecondary,
   },
   modalCloseBtn: {
     marginTop: 16,
     paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.border,
     alignItems: 'center',
   },
   modalCloseBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: GH.muted,
+    color: M.textSecondary,
   },
 });

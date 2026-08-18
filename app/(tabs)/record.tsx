@@ -11,6 +11,8 @@ import { useFonts, PlayfairDisplay_700Bold, PlayfairDisplay_400Regular } from '@
 import { M, RADIUS } from '../../constants/theme';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import notifee from '@notifee/react-native';
 import { getDb } from '../../db/client';
 import { insertActivity } from '../../db/queries/activities';
 import {
@@ -97,6 +99,13 @@ export default function RecordScreen() {
   }, [status]);
 
   const handleStart = useCallback(async () => {
+    try {
+      // Request notification permission for ongoing activity tracking
+      await notifee.requestPermission();
+    } catch (e) {
+      console.warn('Notification permission request failed', e);
+    }
+
     const activityId = generateId();
     const db = getDb();
     try {
@@ -153,9 +162,22 @@ export default function RecordScreen() {
   if (status === 'idle') {
     return (
       <View style={styles.screen}>
-        <View style={styles.ambientGlow} pointerEvents="none" />
-        <View style={[styles.idleContainer, { paddingBottom: insets.bottom + 80 }]}>
+        {/* Header Row */}
+        <View style={[styles.idleHeader, { paddingTop: insets.top + 16 }]}>
           <Text style={styles.wordmark}>MOVEMENT</Text>
+          <TouchableOpacity
+            style={styles.settingsBtn}
+            onPress={() => {
+              router.push('/settings' as any);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Open settings"
+          >
+            <Ionicons name="settings-outline" size={24} color={M.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.idleContainer, { paddingBottom: insets.bottom + 80 }]}>
           <View style={styles.contextChip}>
             <Text style={styles.contextChipText}>
               {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -167,18 +189,21 @@ export default function RecordScreen() {
             </Text>
             <View style={styles.subtextAccent}>
               <Text style={styles.idleSubtitle}>
-                {"Your pace. Your route.\nYour data — always."}
+                {"Your pace. Your route.\nYour data always."}
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={handleStart}
-            accessibilityRole="button"
-            accessibilityLabel="Start recording"
-          >
-            <Text style={styles.startButtonText}>Start</Text>
-          </TouchableOpacity>
+          
+          <View style={styles.startButtonContainer}>
+            <TouchableOpacity
+              style={styles.startButton}
+              onPress={handleStart}
+              accessibilityRole="button"
+              accessibilityLabel="Start recording"
+            >
+              <Text style={styles.startButtonText}>START</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -261,12 +286,23 @@ const styles = StyleSheet.create({
   // ── Idle state ─────────────────────────────────────────────────
   ambientGlow: {
     position: 'absolute',
-    top: -80,
-    left: -80,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(13,22,60,0.6)',
+    top: -120,
+    right: -80,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(13,22,60,0.4)',
+  },
+  idleHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    zIndex: 10,
+  },
+  settingsBtn: {
+    padding: 8,
+    marginRight: -8,
   },
   idleContainer: {
     flex: 1,
@@ -274,11 +310,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   wordmark: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
     color: M.textSecondary,
-    letterSpacing: 0.15,
-    marginBottom: 40,
+    letterSpacing: 2,
   },
   contextChip: {
     backgroundColor: 'rgba(28,26,37,0.5)',
@@ -287,7 +322,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.md,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
     marginBottom: 32,
   },
   contextChipText: {
@@ -299,35 +334,44 @@ const styles = StyleSheet.create({
   headlineBlock: {
     marginBottom: 48,
     gap: 20,
+    alignItems: 'center',
   },
   idleTitle: {
-    fontSize: 52,
+    fontSize: 64,
     fontWeight: '700',
     color: M.textPrimary,
-    letterSpacing: -1.5,
-    lineHeight: 60,
+    letterSpacing: -2,
+    lineHeight: 72,
+    textAlign: 'center',
   },
   subtextAccent: {
-    borderLeftWidth: 2,
-    borderLeftColor: 'rgba(187,255,230,0.2)',
-    paddingLeft: 16,
+    borderTopWidth: 2,
+    borderTopColor: 'rgba(187,255,230,0.2)',
+    paddingTop: 16,
+    alignItems: 'center',
   },
   idleSubtitle: {
     fontSize: 18,
     color: M.textSecondary,
     lineHeight: 28,
+    textAlign: 'center',
+  },
+  startButtonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 40,
   },
   startButton: {
     backgroundColor: M.teal,
     borderRadius: RADIUS.pill,
-    paddingVertical: 20,
-    paddingHorizontal: 48,
-    alignSelf: 'flex-start',
+    paddingVertical: 24,
+    paddingHorizontal: 64,
+    alignSelf: 'center',
     shadowColor: M.teal,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
   },
   startButtonText: {
     color: M.bg,
