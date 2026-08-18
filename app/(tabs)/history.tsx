@@ -9,10 +9,11 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { M, RADIUS } from '../../constants/theme';
+import { StreakModal } from '../../components/StreakModal';
 import { getDb } from '../../db/client';
 import { listActivities, deleteActivities, getCurrentStreak } from '../../db/queries/activities';
 import type { Activity } from '../../db/schema';
@@ -113,9 +114,8 @@ function ActivityCard({
 function EmptyHistory() {
   return (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyEmoji}>🏃</Text>
-      <Text style={styles.emptyTitle}>No activities yet</Text>
-      <Text style={styles.emptySubtitle}>Tap the Record tab to start your first activity.</Text>
+      <Text style={styles.emptyTitle}>No activities recorded yet</Text>
+      <Text style={styles.emptySubtitle}>Lace up, hit the record tab, and get moving!</Text>
     </View>
   );
 }
@@ -128,6 +128,7 @@ export default function HistoryScreen() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [streakModalVisible, setStreakModalVisible] = useState(false);
   
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -149,7 +150,11 @@ export default function HistoryScreen() {
     }
   }, []);
 
-  useEffect(() => { loadActivities(); }, [loadActivities]);
+  useFocusEffect(
+    useCallback(() => {
+      loadActivities();
+    }, [loadActivities])
+  );
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -218,10 +223,10 @@ export default function HistoryScreen() {
         ) : (
           <>
             <Text style={[styles.headerTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>History</Text>
-            <View style={styles.streakBadge}>
+            <TouchableOpacity style={styles.streakBadge} onPress={() => setStreakModalVisible(true)}>
               <Text style={styles.streakEmoji}>{streak.isAliveToday || streak.current > 0 ? '🔥' : '🧊'}</Text>
               <Text style={[styles.streakText, streak.isAliveToday && { color: M.amber }]}>{streak.current} days</Text>
-            </View>
+            </TouchableOpacity>
           </>
         )}
       </View>
@@ -250,7 +255,7 @@ export default function HistoryScreen() {
           />
         )}
         ListHeaderComponent={
-          <>
+          <View style={{ marginBottom: 32 }}>
             <ActivityHeatmap activities={activities} />
             <TouchableOpacity
               style={styles.routesEntryBtn}
@@ -270,7 +275,7 @@ export default function HistoryScreen() {
               <Text style={styles.routesEntryText}>🌍  Geographic Heatmap</Text>
               <Text style={styles.routesEntryChevron}>›</Text>
             </TouchableOpacity>
-          </>
+          </View>
         }
         ListEmptyComponent={<EmptyHistory />}
         contentContainerStyle={[
@@ -285,6 +290,12 @@ export default function HistoryScreen() {
             tintColor={M.teal}
           />
         }
+      />
+      <StreakModal
+        visible={streakModalVisible}
+        onClose={() => setStreakModalVisible(false)}
+        currentStreak={streak.current}
+        isAliveToday={streak.isAliveToday}
       />
     </View>
   );
@@ -384,7 +395,7 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   listContentEmpty: {
-    flex: 1,
+    flexGrow: 1,
   },
   card: {
     flexDirection: 'row',
@@ -425,7 +436,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
   cardTitle: {
@@ -462,6 +473,7 @@ const styles = StyleSheet.create({
   typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'flex-start',
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -503,28 +515,25 @@ const styles = StyleSheet.create({
     color: M.amber,
   },
   emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    marginTop: 80,
-  },
-  emptyEmoji: {
-    fontSize: 56,
-    lineHeight: 64,
-    marginBottom: 16,
+    backgroundColor: 'transparent',
+    borderRadius: RADIUS.card,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: M.borderFaint,
+    borderStyle: 'dashed',
+    marginTop: 32,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: M.textPrimary,
+    fontSize: 14,
+    fontWeight: '600',
+    color: M.textSecondary,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 15,
+    fontSize: 14,
     color: M.textSecondary,
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: 20,
   },
 });

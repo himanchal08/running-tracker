@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { M, RADIUS } from '../../constants/theme';
 import { getDb } from '../../db/client';
@@ -119,7 +120,11 @@ export default function InsightsScreen() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load])
+  );
 
   const currentWeekStart = getWeekStart(new Date());
   const selectedWeekStart = new Date(currentWeekStart);

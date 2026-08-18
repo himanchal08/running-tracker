@@ -14,23 +14,13 @@ import {
 } from 'react-native';
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { M, RADIUS } from '../../constants/theme';
 import { getDb } from '../../db/client';
 import { listActiveGoals, addGoal, deactivateGoal } from '../../db/queries/goals';
-import { listPRs } from '../../db/queries/personalRecords';
 import { getCurrentStreak } from '../../db/queries/activities';
 import { computeGoalsProgress, type GoalProgress } from '../../features/goals/goalEngine';
-import type { PersonalRecord, Goal } from '../../db/schema';
-import { PR_LABELS, type PRCategory } from '../../features/analysis/personalRecords';
-import { formatDistance, formatDuration } from '../../features/tracking/utils/formatters';
-
-function formatPrValue(category: string, value: number): string {
-  if (category.startsWith('fastest_')) return formatDuration(value);
-  if (category.startsWith('furthest_')) return formatDistance(value);
-  if (category === 'longest_activity_s') return formatDuration(value);
-  return String(Math.round(value));
-}
+import { StreakModal } from '../../components/StreakModal';
 
 function ProgressBar({ pct, isCompleted }: { pct: number; isCompleted: boolean }) {
   return (
@@ -49,10 +39,10 @@ function ProgressBar({ pct, isCompleted }: { pct: number; isCompleted: boolean }
 export default function GoalsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const params = useLocalSearchParams<{ showStreak?: string }>();
 
   const [loading, setLoading] = useState(true);
   const [activeGoals, setActiveGoals] = useState<GoalProgress[]>([]);
-  const [prs, setPrs] = useState<PersonalRecord[]>([]);
   const [streak, setStreak] = useState({ current: 0, isAliveToday: false });
 
   // Modal State
@@ -60,6 +50,7 @@ export default function GoalsScreen() {
   const [customMetric, setCustomMetric] = useState<'distance' | 'time' | 'elevation' | 'activities'>('distance');
   const [customPeriod, setCustomPeriod] = useState<'day' | 'week' | 'month'>('week');
   const [customTarget, setCustomTarget] = useState('');
+  const [streakModalVisible, setStreakModalVisible] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -67,18 +58,26 @@ export default function GoalsScreen() {
       const db = getDb();
       const goals = await listActiveGoals(db);
       const progress = await computeGoalsProgress(db, goals);
-      const records = await listPRs(db);
       const currentStreak = await getCurrentStreak(db);
 
       setActiveGoals(progress);
-      setPrs(records);
       setStreak(currentStreak);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
+
+  useEffect(() => {
+    if (params.showStreak === 'true') {
+      setStreakModalVisible(true);
+    }
+  }, [params.showStreak]);
 
   const handleAddGoal = useCallback(
     async (metric: string, period: 'day' | 'week' | 'month', targetValue: number) => {
@@ -144,10 +143,10 @@ export default function GoalsScreen() {
       >
         <View style={styles.headerRow}>
           <Text style={[styles.pageTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>Goals</Text>
-          <View style={styles.streakBadge}>
+          <TouchableOpacity style={styles.streakBadge} onPress={() => setStreakModalVisible(true)}>
             <Text style={styles.streakEmoji}>{streak.isAliveToday || streak.current > 0 ? '🔥' : '🧊'}</Text>
             <Text style={[styles.streakNumber, streak.isAliveToday && { color: M.amber }]}>{streak.current}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.sectionHeader}>
@@ -211,40 +210,15 @@ export default function GoalsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.sectionHeader, { marginTop: 40 }]}>
-          <Text style={styles.sectionTitle}>Personal Records</Text>
-        </View>
 
-        {prs.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No personal records yet. Go set some benchmarks!</Text>
-          </View>
-        ) : (
-          <View style={styles.prGrid}>
-            {prs.map((pr) => {
-              const label = PR_LABELS[pr.category as PRCategory] ?? pr.category;
-              const dateStr = new Date(pr.achievedAt).toLocaleDateString(undefined, {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              });
-              return (
-                <TouchableOpacity
-                  key={pr.id}
-                  style={styles.prTile}
-                  onPress={() => {
-                    router.push(`/pr-history?category=${pr.category}` as any);
-                  }}
-                >
-                  <Text style={styles.prLabel}>{label}</Text>
-                  <Text style={styles.prValue}>{formatPrValue(pr.category, pr.value)}</Text>
-                  <Text style={styles.prDate}>{dateStr}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        )}
       </ScrollView>
+
+      <StreakModal
+        visible={streakModalVisible}
+        onClose={() => setStreakModalVisible(false)}
+        currentStreak={streak.current}
+        isAliveToday={streak.isAliveToday}
+      />
 
       {/* Custom Goal Modal */}
       <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
@@ -366,19 +340,6 @@ const styles = StyleSheet.create({
   },
   templateEmoji: { fontSize: 24 },
   templateText: { color: M.textPrimary, fontSize: 13, fontWeight: '600', textAlign: 'center' },
-  prGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  prTile: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: 'rgba(245,158,11,0.05)',
-    borderWidth: 1,
-    borderColor: M.amberBorder,
-    padding: 20,
-    borderRadius: RADIUS.card,
-  },
-  prLabel: { fontSize: 10, color: M.amber, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.05 },
-  prValue: { fontSize: 24, color: M.textPrimary, fontWeight: '700', fontVariant: ['tabular-nums'], marginBottom: 6, fontFamily: 'PlayfairDisplay_700Bold' },
-  prDate: { fontSize: 11, color: M.textSecondary },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(7,6,15,0.8)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: 'rgba(21,20,36,0.95)', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48, borderWidth: 1, borderColor: M.border },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },

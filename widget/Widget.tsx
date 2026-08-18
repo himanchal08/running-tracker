@@ -18,7 +18,8 @@ function formatDate(date: Date): string {
 export function MovementWidget({ streak = 0, lastActivity }: { streak?: number, lastActivity?: Activity | null }) {
   return (
     <FlexWidget
-      clickAction="OPEN_APP"
+      clickAction="OPEN_URI"
+      clickActionData={{ uri: 'movement-tracker://goals?showStreak=true' }}
       style={{
         height: 'match_parent',
         width: 'match_parent',

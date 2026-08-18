@@ -52,13 +52,6 @@ export const splits = sqliteTable('splits', {
   activityIdx: index('splits_activity_id_idx').on(t.activityId),
 }));
 
-export const personalRecords = sqliteTable('personal_records', {
-  id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-  category: text('category').notNull(),
-  value: real('value').notNull(),
-  activityId: text('activity_id').references(() => activities.id, { onDelete: 'set null' }),
-  achievedAt: integer('achieved_at', { mode: 'timestamp_ms' }).notNull(),
-});
 
 export const routes = sqliteTable('routes', {
   id: text('id').primaryKey(),
@@ -95,7 +88,7 @@ export type Point = typeof points.$inferSelect;
 export type NewPoint = typeof points.$inferInsert;
 export type Split = typeof splits.$inferSelect;
 export type NewSplit = typeof splits.$inferInsert;
-export type PersonalRecord = typeof personalRecords.$inferSelect;
+
 export type Route = typeof routes.$inferSelect;
 export type RouteAttempt = typeof routeAttempts.$inferSelect;
 export type Goal = typeof goals.$inferSelect;
