@@ -3,17 +3,19 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
+  ScrollView,
   Alert,
+  ActivityIndicator,
   Modal,
   TextInput,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { M, RADIUS } from '../../constants/theme';
 import { getDb } from '../../db/client';
 import { listActiveGoals, addGoal, deactivateGoal } from '../../db/queries/goals';
 import { listPRs } from '../../db/queries/personalRecords';
@@ -23,20 +25,6 @@ import type { PersonalRecord, Goal } from '../../db/schema';
 import { PR_LABELS, type PRCategory } from '../../features/analysis/personalRecords';
 import { formatDistance, formatDuration } from '../../features/tracking/utils/formatters';
 
-const GH = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  border: '#30363d',
-  text: '#c9d1d9',
-  muted: '#8b949e',
-  green: '#2ea043',
-  greenBright: '#3fb950',
-  greenFaint: '#0d4a1f',
-  blue: '#58a6ff',
-  yellow: '#d29922',
-  red: '#f85149',
-};
-
 function formatPrValue(category: string, value: number): string {
   if (category.startsWith('fastest_')) return formatDuration(value);
   if (category.startsWith('furthest_')) return formatDistance(value);
@@ -44,10 +32,16 @@ function formatPrValue(category: string, value: number): string {
   return String(Math.round(value));
 }
 
-function ProgressBar({ pct, isCompleted }: { pct: number, isCompleted: boolean }) {
+function ProgressBar({ pct, isCompleted }: { pct: number; isCompleted: boolean }) {
   return (
     <View style={styles.progressTrack}>
-      <View style={[styles.progressFill, { width: `${Math.min(100, Math.max(0, pct))}%`, backgroundColor: isCompleted ? GH.yellow : GH.greenBright }]} />
+      <View
+        style={[
+          styles.progressFill,
+          { width: `${Math.min(pct, 100)}%` },
+          isCompleted ? { backgroundColor: M.amber } : { backgroundColor: M.teal },
+        ]}
+      />
     </View>
   );
 }
@@ -136,10 +130,12 @@ export default function GoalsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={GH.greenBright} />
+        <ActivityIndicator size="large" color={M.teal} />
       </View>
     );
   }
+
+  const [fontsLoaded] = useFonts({ PlayfairDisplay_700Bold });
 
   return (
     <View style={styles.screen}>
@@ -147,10 +143,10 @@ export default function GoalsScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24, paddingTop: insets.top + 16 }]}
       >
         <View style={styles.headerRow}>
-          <Text style={styles.pageTitle}>Goals</Text>
+          <Text style={[styles.pageTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>Goals</Text>
           <View style={styles.streakBadge}>
             <Text style={styles.streakEmoji}>{streak.isAliveToday || streak.current > 0 ? '🔥' : '🧊'}</Text>
-            <Text style={[styles.streakNumber, streak.isAliveToday && { color: '#ff9800' }]}>{streak.current}</Text>
+            <Text style={[styles.streakNumber, streak.isAliveToday && { color: M.amber }]}>{streak.current}</Text>
           </View>
         </View>
 
@@ -183,11 +179,11 @@ export default function GoalsScreen() {
               accessibilityLabel={`Goal: ${gp.goal.period} ${gp.goal.metric}. ${gp.progressPct}% complete`}
             >
               <View style={styles.goalTopRow}>
-                <Text style={[styles.goalTitle, gp.isCompleted && { color: GH.yellow }]}>
+                <Text style={[styles.goalTitle, gp.isCompleted && { color: M.amber }]}>
                   {gp.goal.period === 'day' ? 'Daily' : gp.goal.period === 'week' ? 'Weekly' : 'Monthly'} {gp.goal.metric}
                   {gp.isCompleted ? ' 🏆' : ''}
                 </Text>
-                <Text style={[styles.goalPct, gp.isCompleted && { color: GH.yellow }]}>{gp.progressPct}%</Text>
+                <Text style={[styles.goalPct, gp.isCompleted && { color: M.amber }]}>{gp.progressPct}%</Text>
               </View>
               <Text style={styles.goalLabel}>{gp.label}</Text>
               <ProgressBar pct={gp.progressPct} isCompleted={gp.isCompleted} />
@@ -251,7 +247,7 @@ export default function GoalsScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>New Custom Goal</Text>
+              <Text style={[styles.modalTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>New Pursuit</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Text style={styles.modalCloseBtn}>✕</Text>
               </TouchableOpacity>
@@ -291,10 +287,10 @@ export default function GoalsScreen() {
               Target Value {customMetric === 'distance' ? '(km)' : customMetric === 'time' ? '(hours)' : customMetric === 'elevation' ? '(meters)' : '(count)'}
             </Text>
             <TextInput
-              style={styles.textInput}
+              style={[styles.textInput, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}
               keyboardType="numeric"
               placeholder={customMetric === 'distance' ? 'e.g. 10' : customMetric === 'time' ? 'e.g. 5' : 'e.g. 100'}
-              placeholderTextColor={GH.muted}
+              placeholderTextColor={M.textSecondary}
               value={customTarget}
               onChangeText={setCustomTarget}
             />
@@ -310,72 +306,72 @@ export default function GoalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: GH.bg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 16 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  pageTitle: { fontSize: 24, fontWeight: '800', color: GH.text, letterSpacing: -0.5 },
-  streakBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1c1917', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#431407' },
-  streakEmoji: { fontSize: 16, marginRight: 4 },
-  streakNumber: { fontSize: 16, fontWeight: '800', color: GH.muted },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, marginTop: 8 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: GH.muted, textTransform: 'uppercase', letterSpacing: 0.5 },
-  addBtn: { backgroundColor: GH.greenFaint, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: GH.green },
-  addBtnText: { color: GH.greenBright, fontSize: 12, fontWeight: '700' },
-  progressTrack: { height: 6, backgroundColor: GH.border, borderRadius: 3, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 3 },
-  emptyState: { backgroundColor: GH.surface, padding: 24, borderRadius: 12, borderWidth: 1, borderColor: GH.border, alignItems: 'center' },
+  screen: { flex: 1, backgroundColor: M.bgAlt },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: M.bgAlt },
+  content: { padding: 20 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+  pageTitle: { fontSize: 28, fontWeight: '700', color: M.textPrimary, letterSpacing: -0.5 },
+  streakBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: M.surfaceBright, paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: M.borderSubtle },
+  streakEmoji: { fontSize: 14, marginRight: 6 },
+  streakNumber: { fontSize: 14, fontWeight: '600', color: M.textPrimary },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16, marginTop: 8 },
+  sectionTitle: { fontSize: 12, fontWeight: '600', color: M.textSecondary, textTransform: 'uppercase', letterSpacing: 0.1 },
+  addBtn: { backgroundColor: M.tealFaint, paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: M.tealBorder },
+  addBtnText: { color: M.teal, fontSize: 12, fontWeight: '600' },
+  progressTrack: { height: 8, backgroundColor: M.cardMid, borderRadius: 4, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 4 },
+  emptyState: { backgroundColor: M.card, padding: 32, borderRadius: RADIUS.card, borderWidth: 1, borderColor: M.border, alignItems: 'center' },
   emptyStateEmoji: { fontSize: 48, marginBottom: 16 },
-  emptyStateTitle: { fontSize: 18, fontWeight: '700', color: GH.text, marginBottom: 8 },
-  emptyStateSubtitle: { fontSize: 14, color: GH.muted, textAlign: 'center', lineHeight: 20, marginBottom: 20 },
-  emptyStateBtn: { backgroundColor: GH.blue, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 8 },
-  emptyStateBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
-  emptyCard: { backgroundColor: GH.surface, padding: 16, borderRadius: 10, borderWidth: 1, borderColor: GH.border },
-  emptyText: { color: GH.muted, fontSize: 14, textAlign: 'center' },
+  emptyStateTitle: { fontSize: 18, fontWeight: '700', color: M.textPrimary, marginBottom: 12 },
+  emptyStateSubtitle: { fontSize: 14, color: M.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  emptyStateBtn: { backgroundColor: M.teal, paddingHorizontal: 24, paddingVertical: 14, borderRadius: RADIUS.pill },
+  emptyStateBtnText: { color: M.bg, fontWeight: '700', fontSize: 14 },
+  emptyCard: { backgroundColor: M.surface, padding: 24, borderRadius: RADIUS.card, borderWidth: 1, borderColor: M.borderFaint },
+  emptyText: { color: M.textSecondary, fontSize: 14, textAlign: 'center' },
   goalCard: {
-    backgroundColor: GH.surface,
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: M.surface,
+    padding: 20,
+    borderRadius: RADIUS.card,
     borderWidth: 1,
-    borderColor: GH.border,
-    marginBottom: 12,
+    borderColor: M.borderFaint,
+    marginBottom: 16,
   },
   goalCardCompleted: {
-    backgroundColor: '#1f1a0a',
-    borderColor: GH.yellow,
+    backgroundColor: 'rgba(245,158,11,0.05)',
+    borderColor: M.amberBorder,
   },
-  goalTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
-  goalTitle: { fontSize: 15, fontWeight: '700', color: GH.text, textTransform: 'capitalize' },
-  goalPct: { fontSize: 15, fontWeight: '700', color: GH.greenBright },
-  goalLabel: { fontSize: 13, color: GH.muted, marginBottom: 12 },
-  templatesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  templateBtn: { backgroundColor: GH.surface, borderWidth: 1, borderColor: GH.border, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10 },
-  templateText: { color: GH.text, fontSize: 13, fontWeight: '600' },
-  prGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  goalTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  goalTitle: { fontSize: 15, fontWeight: '600', color: M.textPrimary },
+  goalPct: { fontSize: 15, fontWeight: '700', color: M.teal },
+  goalLabel: { fontSize: 13, color: M.textSecondary, marginBottom: 16 },
+  templatesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  templateBtn: { backgroundColor: M.surface, borderWidth: 1, borderColor: M.borderFaint, paddingVertical: 14, paddingHorizontal: 16, borderRadius: RADIUS.card },
+  templateText: { color: M.textPrimary, fontSize: 13, fontWeight: '500' },
+  prGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   prTile: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: '#2e1f00',
+    backgroundColor: 'rgba(245,158,11,0.05)',
     borderWidth: 1,
-    borderColor: GH.yellow,
-    padding: 16,
-    borderRadius: 12,
+    borderColor: M.amberBorder,
+    padding: 20,
+    borderRadius: RADIUS.card,
   },
-  prLabel: { fontSize: 11, color: '#e3b341', fontWeight: '700', textTransform: 'uppercase', marginBottom: 6 },
-  prValue: { fontSize: 22, color: GH.yellow, fontWeight: '800', fontVariant: ['tabular-nums'], marginBottom: 4 },
-  prDate: { fontSize: 12, color: GH.muted },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: GH.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 24, paddingBottom: 40, borderWidth: 1, borderColor: GH.border },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  modalTitle: { fontSize: 20, fontWeight: '800', color: GH.text },
-  modalCloseBtn: { fontSize: 24, color: GH.muted, fontWeight: 'bold' },
-  formLabel: { fontSize: 13, fontWeight: '700', color: GH.text, marginBottom: 8, textTransform: 'uppercase' },
-  segmentedControl: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
-  segmentBtn: { flex: 1, minWidth: '30%', backgroundColor: GH.surface, paddingVertical: 12, alignItems: 'center', borderRadius: 8, borderWidth: 1, borderColor: GH.border },
-  segmentBtnActive: { backgroundColor: GH.greenFaint, borderColor: GH.green },
-  segmentText: { color: GH.muted, fontSize: 13, fontWeight: '600' },
-  segmentTextActive: { color: GH.greenBright, fontWeight: '700' },
-  textInput: { backgroundColor: GH.surface, borderWidth: 1, borderColor: GH.border, color: GH.text, fontSize: 18, padding: 16, borderRadius: 8, marginBottom: 32 },
-  saveBtn: { backgroundColor: GH.greenBright, padding: 16, borderRadius: 10, alignItems: 'center' },
-  saveBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
+  prLabel: { fontSize: 10, color: M.amber, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.05 },
+  prValue: { fontSize: 24, color: M.textPrimary, fontWeight: '700', fontVariant: ['tabular-nums'], marginBottom: 6, fontFamily: 'PlayfairDisplay_700Bold' },
+  prDate: { fontSize: 11, color: M.textSecondary },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(7,6,15,0.8)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: 'rgba(21,20,36,0.95)', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48, borderWidth: 1, borderColor: M.border },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+  modalTitle: { fontSize: 24, fontWeight: '700', color: M.textPrimary },
+  modalCloseBtn: { fontSize: 24, color: M.textSecondary, fontWeight: '400' },
+  formLabel: { fontSize: 11, fontWeight: '600', color: M.textSecondary, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.1 },
+  segmentedControl: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 28 },
+  segmentBtn: { flex: 1, minWidth: '30%', backgroundColor: M.surfaceBright, paddingVertical: 14, alignItems: 'center', borderRadius: RADIUS.xl, borderWidth: 1, borderColor: 'transparent' },
+  segmentBtnActive: { backgroundColor: M.cardMid, borderColor: M.teal },
+  segmentText: { color: M.textSecondary, fontSize: 13, fontWeight: '500' },
+  segmentTextActive: { color: M.textPrimary, fontWeight: '600' },
+  textInput: { backgroundColor: M.surfaceBright, borderWidth: 1, borderColor: 'transparent', color: M.textPrimary, fontSize: 24, padding: 20, borderRadius: RADIUS.xl, marginBottom: 40 },
+  saveBtn: { backgroundColor: M.teal, padding: 18, borderRadius: RADIUS.pill, alignItems: 'center', shadowColor: M.teal, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 12 },
+  saveBtnText: { color: M.bg, fontSize: 16, fontWeight: '700' },
 });

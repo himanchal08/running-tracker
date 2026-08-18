@@ -5,17 +5,7 @@ import { useRouter } from 'expo-router';
 import { exportData, importData } from '../features/settings/dataManager';
 import { getBodyWeightKg, setBodyWeightKg } from '../features/settings/userProfile';
 
-const GH = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  border: '#30363d',
-  text: '#c9d1d9',
-  muted: '#8b949e',
-  blue: '#58a6ff',
-  green: '#2ea043',
-  greenBright: '#3fb950',
-  red: '#f85149',
-};
+import { M, RADIUS } from '../constants/theme';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -111,7 +101,7 @@ export default function SettingsScreen() {
                   returnKeyType="done"
                   onSubmitEditing={handleSaveWeight}
                   accessibilityLabel="Body weight in kilograms"
-                  placeholderTextColor={GH.muted}
+                  placeholderTextColor={M.textSecondary}
                   placeholder="70"
                 />
                 <Text style={styles.weightUnit}>kg</Text>
@@ -136,12 +126,12 @@ export default function SettingsScreen() {
           <View style={styles.card}>
             <TouchableOpacity style={styles.row} onPress={handleExport} disabled={loading}>
               <Text style={styles.rowText}>Export Database Backup</Text>
-              {loading ? <ActivityIndicator size="small" color={GH.blue} /> : <Text style={styles.chevron}>›</Text>}
+              {loading ? <ActivityIndicator size="small" color={M.blue} /> : <Text style={styles.chevron}>›</Text>}
             </TouchableOpacity>
             <View style={styles.divider} />
             <TouchableOpacity style={styles.row} onPress={handleImport} disabled={loading}>
               <Text style={styles.rowTextDestructive}>Import Database Backup</Text>
-              {loading ? <ActivityIndicator size="small" color={GH.red} /> : <Text style={styles.chevron}>›</Text>}
+              {loading ? <ActivityIndicator size="small" color={M.danger} /> : <Text style={styles.chevron}>›</Text>}
             </TouchableOpacity>
           </View>
           <Text style={styles.footerText}>
@@ -154,60 +144,58 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: GH.bg },
+  container: { flex: 1, backgroundColor: M.bg },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: GH.border,
-    backgroundColor: GH.bg,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: M.bg,
   },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: GH.text },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: M.textPrimary, letterSpacing: -0.5 },
   headerBtn: { padding: 8, marginLeft: -8 },
-  headerBtnText: { color: GH.blue, fontSize: 16 },
-  content: { padding: 16 },
-  sectionTitle: { fontSize: 13, fontWeight: '700', color: GH.muted, textTransform: 'uppercase', marginBottom: 8, marginLeft: 4, letterSpacing: 0.6 },
-  card: { backgroundColor: GH.surface, borderRadius: 10, borderWidth: 1, borderColor: GH.border, overflow: 'hidden' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
-  profileRow: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
-  rowText: { fontSize: 16, color: GH.text, fontWeight: '500' },
-  rowSubText: { fontSize: 12, color: GH.muted, marginTop: 2, lineHeight: 16 },
-  rowTextDestructive: { fontSize: 16, color: GH.red, fontWeight: '500' },
-  chevron: { fontSize: 20, color: GH.muted, lineHeight: 20 },
-  divider: { height: 1, backgroundColor: GH.border, marginLeft: 16 },
-  footerText: { fontSize: 13, color: GH.muted, marginTop: 10, marginHorizontal: 4, lineHeight: 18 },
-  weightInputRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerBtnText: { color: M.textSecondary, fontSize: 16 },
+  content: { padding: 20 },
+  sectionTitle: { fontSize: 11, fontWeight: '700', color: M.textSecondary, textTransform: 'uppercase', marginBottom: 12, marginLeft: 4, letterSpacing: 0.5 },
+  card: { backgroundColor: M.surface, borderRadius: RADIUS.card, borderWidth: 1, borderColor: M.borderFaint, overflow: 'hidden' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
+  profileRow: { flexDirection: 'row', alignItems: 'center', padding: 20, gap: 16 },
+  rowText: { fontSize: 15, color: M.textPrimary, fontWeight: '500' },
+  rowSubText: { fontSize: 13, color: M.textSecondary, marginTop: 4, lineHeight: 18 },
+  rowTextDestructive: { fontSize: 15, color: M.danger, fontWeight: '500' },
+  chevron: { fontSize: 20, color: M.textSecondary, lineHeight: 20 },
+  divider: { height: 1, backgroundColor: M.borderFaint, marginLeft: 20 },
+  footerText: { fontSize: 13, color: M.textSecondary, marginTop: 12, marginHorizontal: 4, lineHeight: 20, fontStyle: 'italic' },
+  weightInputRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   weightInput: {
-    backgroundColor: GH.bg,
+    backgroundColor: M.bg,
     borderWidth: 1,
-    borderColor: GH.border,
-    borderRadius: 8,
-    color: GH.text,
+    borderColor: M.border,
+    borderRadius: RADIUS.md,
+    color: M.textPrimary,
     fontSize: 18,
     fontWeight: '700',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    minWidth: 64,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    minWidth: 70,
     textAlign: 'center',
   },
-  weightUnit: { color: GH.muted, fontSize: 14, fontWeight: '600' },
+  weightUnit: { color: M.textSecondary, fontSize: 14, fontWeight: '600' },
   saveWeightBtn: {
-    marginHorizontal: 16,
-    marginBottom: 14,
-    paddingVertical: 10,
-    borderRadius: 8,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    paddingVertical: 14,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
-    borderColor: GH.green,
+    borderColor: M.tealBorder,
     alignItems: 'center',
-    backgroundColor: '#0d2a0d',
+    backgroundColor: M.tealFaint,
   },
   saveWeightBtnSaved: {
-    borderColor: GH.greenBright,
-    backgroundColor: '#0d4a1f',
+    borderColor: M.teal,
+    backgroundColor: M.teal,
   },
-  saveWeightBtnText: { fontSize: 14, fontWeight: '700', color: GH.greenBright },
-  saveWeightBtnTextSaved: { color: '#ffffff' },
+  saveWeightBtnText: { fontSize: 14, fontWeight: '700', color: M.teal },
+  saveWeightBtnTextSaved: { color: M.bg },
 });

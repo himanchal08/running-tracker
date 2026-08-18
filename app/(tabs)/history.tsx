@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
+import { M, RADIUS } from '../../constants/theme';
 import { getDb } from '../../db/client';
 import { listActivities, deleteActivities } from '../../db/queries/activities';
 import type { Activity } from '../../db/schema';
@@ -18,27 +20,10 @@ import {
   formatDistance,
   formatDuration,
   computePaceSecPerUnit,
-  formatPace,
   formatActivityDate,
   ACTIVITY_TYPE_EMOJI,
   ACTIVITY_TYPE_LABELS,
 } from '../../features/tracking/utils/formatters';
-
-const GH = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surfaceHover: '#1c2128',
-  border: '#30363d',
-  text: '#c9d1d9',
-  muted: '#8b949e',
-  green: '#2ea043',
-  greenBright: '#3fb950',
-  greenFaint: '#0d4a1f',
-  blue: '#58a6ff',
-  yellow: '#d29922',
-  yellowFaint: '#2e1f00',
-  red: '#f85149',
-};
 
 const HEATMAP_LEVELS = [
   '#161b22',
@@ -51,11 +36,11 @@ const HEATMAP_LEVELS = [
 import { ActivityHeatmap } from '../../components/ActivityHeatmap';
 
 const TYPE_BADGE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  running:  { bg: '#0d2a0d', text: '#3fb950', border: '#2ea043' },
-  walking:  { bg: '#0d1f30', text: '#58a6ff', border: '#1f6feb' },
-  cycling:  { bg: '#2e1f00', text: '#d29922', border: '#9e6a03' },
+  running:  { bg: M.tealFaint, text: M.teal, border: M.tealBorder },
+  walking:  { bg: 'rgba(59,130,246,0.1)', text: M.blue, border: 'rgba(59,130,246,0.2)' },
+  cycling:  { bg: M.amberFaint, text: M.amber, border: M.amberBorder },
   hiking:   { bg: '#1d1f0d', text: '#b5bd00', border: '#7d8200' },
-  unknown:  { bg: '#1a1a1a', text: '#8b949e', border: '#30363d' },
+  unknown:  { bg: M.surface, text: M.textSecondary, border: M.border },
 };
 
 function ActivityCard({ 
@@ -74,7 +59,6 @@ function ActivityCard({
   const pace = computePaceSecPerUnit(activity.distanceM, activity.movingTimeS);
   const badgeColors = TYPE_BADGE_COLORS[activity.type] ?? TYPE_BADGE_COLORS.unknown;
 
-  // Format pace as a human-readable string with unit label
   const paceDisplay = (() => {
     if (!pace || pace <= 0) return '--';
     const mins = Math.floor(pace / 60);
@@ -89,8 +73,6 @@ function ActivityCard({
       onLongPress={onLongPress}
       delayLongPress={500}
       activeOpacity={0.75}
-      accessibilityRole="button"
-      accessibilityLabel={`${ACTIVITY_TYPE_LABELS[activity.type] ?? 'Activity'} on ${formatActivityDate(activity.startedAt)}`}
     >
       {selectionMode && (
         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
@@ -111,27 +93,17 @@ function ActivityCard({
           <Text style={styles.cardDate}>{formatActivityDate(activity.startedAt)}</Text>
         </View>
 
+        <View style={styles.cardPrimaryRow}>
+          <Text style={styles.cardDistanceValue}>{(activity.distanceM / 1000).toFixed(2)}</Text>
+          <Text style={styles.cardDistanceUnit}>KM</Text>
+        </View>
+
         <View style={styles.cardStats}>
-          <View style={styles.statRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{formatDistance(activity.distanceM)}</Text>
-              <Text style={styles.statLabel}>Distance</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{formatDuration(activity.movingTimeS)}</Text>
-              <Text style={styles.statLabel}>Moving time</Text>
-            </View>
-          </View>
-          <View style={styles.statRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{paceDisplay}</Text>
-              <Text style={styles.statLabel}>Pace</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statValue}>{Math.round(activity.calorieEstimate || 0)}</Text>
-              <Text style={styles.statLabel}>Calories</Text>
-            </View>
-          </View>
+          <Text style={styles.statValue}>{formatDuration(activity.movingTimeS)}</Text>
+          <Text style={styles.statDivider}>·</Text>
+          <Text style={styles.statValue}>{paceDisplay} /km</Text>
+          <Text style={styles.statDivider}>·</Text>
+          <Text style={styles.statValue}>{Math.round(activity.elevationGainM)}m</Text>
         </View>
       </View>
     </TouchableOpacity>
@@ -151,6 +123,7 @@ function EmptyHistory() {
 export default function HistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [fontsLoaded] = useFonts({ PlayfairDisplay_700Bold });
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -218,31 +191,22 @@ export default function HistoryScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={GH.greenBright} />
+        <ActivityIndicator size="large" color={M.teal} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <Text style={styles.headerTitle}>History</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          {selectionMode ? (
-            <TouchableOpacity onPress={handleDeleteSelected} style={styles.headerBtn}>
-              <Text style={styles.headerBtnTextDestructive}>Delete ({selectedIds.size})</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={() => setSelectionMode(true)} style={styles.headerBtn}>
-              <Text style={styles.headerBtnText}>Select</Text>
-            </TouchableOpacity>
-          )}
-          {!selectionMode && (
-            <TouchableOpacity onPress={() => router.push('/settings' as any)} style={styles.headerBtn}>
-              <Text style={{ fontSize: 22 }}>⚙️</Text>
-            </TouchableOpacity>
-          )}
+      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
+        <Text style={[styles.headerTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>History</Text>
+        <View style={styles.streakBadge}>
+          <Text style={styles.streakEmoji}>🔥</Text>
+          <Text style={styles.streakText}>7 days</Text>
         </View>
+      </View>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>RECENT RUNS</Text>
       </View>
       <FlatList
         data={activities}
@@ -298,7 +262,7 @@ export default function HistoryScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={GH.greenBright}
+            tintColor={M.teal}
           />
         }
       />
@@ -310,78 +274,131 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: GH.bg,
+    backgroundColor: M.bgAlt,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: GH.text,
-    letterSpacing: -0.5,
+    fontSize: 28,
+    fontWeight: '700',
+    color: M.textPrimary,
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: M.surfaceBright,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: RADIUS.pill,
+    borderWidth: 1,
+    borderColor: M.borderSubtle,
+  },
+  streakEmoji: {
+    fontSize: 14,
+  },
+  streakText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: M.textPrimary,
+  },
+  sectionHeader: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: M.textSecondary,
+    letterSpacing: 0.1,
   },
   headerBtn: {
     padding: 8,
   },
   headerBtnText: {
-    color: GH.blue,
+    color: M.blue,
     fontSize: 16,
     fontWeight: '600',
   },
   headerBtnTextDestructive: {
-    color: GH.red,
+    color: M.danger,
     fontSize: 16,
     fontWeight: '600',
+  },
+  routesEntryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: M.surface,
+    padding: 16,
+    borderRadius: RADIUS.card,
+    borderWidth: 1,
+    borderColor: M.borderFaint,
+    marginTop: 12,
+  },
+  routesEntryText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: M.textPrimary,
+  },
+  routesEntryChevron: {
+    fontSize: 20,
+    color: M.textSecondary,
+    lineHeight: 20,
   },
   loadingContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: GH.bg,
+    backgroundColor: M.bgAlt,
   },
   listContent: {
-    paddingHorizontal: 16,
-    backgroundColor: GH.bg,
+    paddingHorizontal: 20,
+    backgroundColor: M.bgAlt,
     flexGrow: 1,
+    paddingBottom: 100,
   },
   listContentEmpty: {
     flex: 1,
   },
   card: {
-    flexDirection: 'row',
-    backgroundColor: GH.surface,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
+    flexDirection: 'column',
+    backgroundColor: M.card,
+    borderRadius: RADIUS.card,
+    padding: 24,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.border,
+    borderLeftWidth: 4,
+    borderLeftColor: M.teal,
+    gap: 16,
   },
   cardSelected: {
-    borderColor: GH.green,
-    backgroundColor: '#0d1f17',
+    borderColor: M.teal,
+    backgroundColor: M.cardMid,
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: GH.muted,
-    marginRight: 12,
+    borderColor: M.textSecondary,
+    marginRight: 16,
     alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxSelected: {
-    backgroundColor: GH.greenBright,
-    borderColor: GH.greenBright,
+    backgroundColor: M.teal,
+    borderColor: M.teal,
   },
   checkboxCheck: {
-    color: '#fff',
+    color: M.bg,
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -391,69 +408,84 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: M.borderFaint,
+    paddingTop: 16,
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: M.textPrimary,
+  },
+  cardDate: {
+    fontSize: 10,
+    color: M.textSecondary,
+    fontWeight: '400',
+    letterSpacing: 0.05,
+    textTransform: 'uppercase',
+  },
+  cardPrimaryRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  cardDistanceValue: {
+    fontSize: 40,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    fontWeight: '700',
+    color: M.textPrimary,
+    lineHeight: 40,
+  },
+  cardDistanceUnit: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: M.teal,
+    letterSpacing: 0.1,
   },
   typeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
-    gap: 4,
+    marginBottom: 8,
   },
   typeBadgeEmoji: {
-    fontSize: 13,
+    fontSize: 12,
   },
   typeBadgeText: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
-  },
-  cardDate: {
-    fontSize: 12,
-    color: GH.muted,
-    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   cardStats: {
-    gap: 12,
-  },
-  statRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  stat: {
-    flex: 1,
-    backgroundColor: '#1c2128', // Slightly lighter than surface
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
   statValue: {
     fontSize: 16,
-    fontWeight: '700',
-    color: GH.text,
-    letterSpacing: -0.3,
+    color: M.textSecondary,
   },
-  statLabel: {
-    fontSize: 11,
-    color: GH.muted,
-    fontWeight: '500',
-    marginTop: 2,
-    textTransform: 'uppercase',
+  statDivider: {
+    fontSize: 16,
+    color: M.textMuted,
   },
   gpsWarning: {
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: GH.border,
+    borderTopColor: M.borderFaint,
     paddingHorizontal: 4,
     paddingBottom: 2,
   },
   gpsWarningText: {
     fontSize: 12,
-    color: GH.yellow,
+    color: M.amber,
   },
   emptyContainer: {
     flex: 1,
@@ -468,36 +500,14 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: GH.text,
+    color: M.textPrimary,
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 15,
-    color: GH.muted,
+    color: M.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
-  },
-  routesEntryBtn: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: GH.surface,
-    marginHorizontal: 12,
-    marginBottom: 12,
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: GH.border,
-  },
-  routesEntryText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: GH.blue,
-  },
-  routesEntryChevron: {
-    fontSize: 20,
-    color: GH.muted,
   },
 });

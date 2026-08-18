@@ -7,6 +7,8 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
+import { useFonts, PlayfairDisplay_700Bold, PlayfairDisplay_400Regular } from '@expo-google-fonts/playfair-display';
+import { M, RADIUS } from '../../constants/theme';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDb } from '../../db/client';
@@ -29,20 +31,7 @@ import {
 import { useEffect } from 'react';
 import { LiveMap } from '../../components/LiveMap';
 
-const GH = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  border: '#30363d',
-  text: '#c9d1d9',
-  muted: '#8b949e',
-  green: '#2ea043',
-  greenBright: '#3fb950',
-  greenFaint: '#0d4a1f',
-  blue: '#58a6ff',
-  yellow: '#d29922',
-  red: '#f85149',
-  redFaint: '#3d0000',
-};
+// Tokens from constants/theme.ts (M)
 
 function generateId(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -55,10 +44,10 @@ function generateId(): string {
   });
 }
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function StatTile({ label, value, fontsLoaded }: { label: string; value: string; fontsLoaded: boolean }) {
   return (
     <View style={styles.statTile}>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={[styles.statValue, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
@@ -70,9 +59,9 @@ function GpsIndicator({ accuracyM }: { accuracyM: number | null }) {
   const detail = accuracyM != null ? ` ±${Math.round(accuracyM)}m` : '';
 
   return (
-    <View style={styles.gpsRow}>
+    <View style={styles.gpsPill}>
       <View style={[styles.gpsDot, { backgroundColor: color }]} />
-      <Text style={[styles.gpsText, { color }]}>GPS {label}{detail}</Text>
+      <Text style={styles.gpsText}>GPS {label}{detail}</Text>
     </View>
   );
 }
@@ -80,6 +69,7 @@ function GpsIndicator({ accuracyM }: { accuracyM: number | null }) {
 export default function RecordScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [fontsLoaded] = useFonts({ PlayfairDisplay_700Bold, PlayfairDisplay_400Regular });
 
   const {
     status,
@@ -162,11 +152,25 @@ export default function RecordScreen() {
 
   if (status === 'idle') {
     return (
-      <View style={[styles.screen, { paddingBottom: insets.bottom }]}>
-        <View style={styles.idleContainer}>
-          <Text style={styles.idleTitle}>Ready to move?</Text>
-          <Text style={styles.idleSubtitle}>Just press Start. We'll automatically detect your activity.</Text>
-
+      <View style={styles.screen}>
+        <View style={styles.ambientGlow} pointerEvents="none" />
+        <View style={[styles.idleContainer, { paddingBottom: insets.bottom + 80 }]}>
+          <Text style={styles.wordmark}>MOVEMENT</Text>
+          <View style={styles.contextChip}>
+            <Text style={styles.contextChipText}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </Text>
+          </View>
+          <View style={styles.headlineBlock}>
+            <Text style={[styles.idleTitle, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>
+              {"Let's\nrun."}
+            </Text>
+            <View style={styles.subtextAccent}>
+              <Text style={styles.idleSubtitle}>
+                {"Your pace. Your route.\nYour data — always."}
+              </Text>
+            </View>
+          </View>
           <TouchableOpacity
             style={styles.startButton}
             onPress={handleStart}
@@ -180,69 +184,65 @@ export default function RecordScreen() {
     );
   }
 
+  const distanceParts = formatDistance(liveDistanceM).split(' ');
+  const distanceNum = distanceParts[0];
+  const distanceUnit = distanceParts[1] ?? 'km';
+
   return (
     <View style={styles.screen}>
       <View style={styles.mapContainer}>
         <LiveMap routePoints={routePoints} liveMode={true} />
+        <View style={styles.mapFade} pointerEvents="none" />
       </View>
-      <ScrollView contentContainerStyle={[styles.liveContainer, { paddingBottom: insets.bottom + 24 }]} bounces={false}>
-        <GpsIndicator accuracyM={liveGpsAccuracyM} />
-
-        <View style={[styles.statusBadge, status === 'paused' && styles.statusBadgePaused]}>
-          <Text style={[styles.statusBadgeText, status === 'paused' && styles.statusBadgeTextPaused]}>
-            {status === 'recording' ? '⬤  Recording' : '⏸  Paused'}
-          </Text>
+      <ScrollView
+        contentContainerStyle={[styles.liveContainer, { paddingBottom: insets.bottom + 100 }]}
+        bounces={false}
+      >
+        <View style={styles.statusRow}>
+          <GpsIndicator accuracyM={liveGpsAccuracyM} />
+          <View style={[styles.recBadge, status === 'paused' && styles.recBadgePaused]}>
+            <View style={[styles.recDot, status === 'paused' && { backgroundColor: M.amber }]} />
+            <Text style={[styles.recText, status === 'paused' && { color: M.amber }]}>
+              {status === 'recording' ? 'REC' : 'PAUSED'}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.primaryStat}>
-          <Text style={styles.primaryValue}>{formatDistance(liveDistanceM)}</Text>
-          <Text style={styles.primaryLabel}>Distance</Text>
+          <Text style={[styles.primaryValue, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>
+            {distanceNum}
+          </Text>
+          <Text style={styles.primaryUnit}>{distanceUnit.toUpperCase()}</Text>
         </View>
 
         <View style={styles.statsGrid}>
-          <StatTile label="Moving time" value={formatDuration(liveMovingTimeS)} />
-          <StatTile label="Elapsed time" value={formatDuration(liveElapsedTimeS)} />
-          <StatTile label="Avg pace" value={formatPace(livePace)} />
-          <StatTile label="Elevation gain" value={`${Math.round(liveElevationGainM)} m`} />
+          <StatTile label="MOVING TIME" value={formatDuration(liveMovingTimeS)} fontsLoaded={fontsLoaded} />
+          <StatTile label="ELAPSED" value={formatDuration(liveElapsedTimeS)} fontsLoaded={fontsLoaded} />
+          <StatTile label="AVG PACE" value={formatPace(livePace)} fontsLoaded={fontsLoaded} />
+          <StatTile label="ELEV GAIN" value={`${Math.round(liveElevationGainM)}m`} fontsLoaded={fontsLoaded} />
         </View>
 
         <View style={styles.controls}>
           {status === 'recording' ? (
             <>
-              <TouchableOpacity
-                style={styles.pauseButton}
-                onPress={handlePause}
-                accessibilityRole="button"
-                accessibilityLabel="Pause recording"
-              >
-                <Text style={styles.pauseButtonText}>⏸  Pause</Text>
+              <TouchableOpacity style={styles.pauseButton} onPress={handlePause}
+                accessibilityRole="button" accessibilityLabel="Pause recording">
+                <Text style={styles.pauseButtonText}>PAUSE</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.stopButton}
-                onPress={handleStop}
-                accessibilityRole="button"
-                accessibilityLabel="Stop and save recording"
-              >
-                <Text style={styles.stopButtonText}>⏹  Stop</Text>
+              <TouchableOpacity style={styles.stopButton} onPress={handleStop}
+                accessibilityRole="button" accessibilityLabel="Stop and save recording">
+                <Text style={styles.stopButtonText}>STOP</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <TouchableOpacity
-                style={styles.resumeButton}
-                onPress={handleResume}
-                accessibilityRole="button"
-                accessibilityLabel="Resume recording"
-              >
-                <Text style={styles.resumeButtonText}>▶  Resume</Text>
+              <TouchableOpacity style={styles.resumeButton} onPress={handleResume}
+                accessibilityRole="button" accessibilityLabel="Resume recording">
+                <Text style={styles.resumeButtonText}>RESUME</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.stopButton}
-                onPress={handleStop}
-                accessibilityRole="button"
-                accessibilityLabel="Stop and save recording"
-              >
-                <Text style={styles.stopButtonText}>⏹  Stop & Save</Text>
+              <TouchableOpacity style={styles.stopButton} onPress={handleStop}
+                accessibilityRole="button" accessibilityLabel="Stop and save recording">
+                <Text style={styles.stopButtonText}>STOP & SAVE</Text>
               </TouchableOpacity>
             </>
           )}
@@ -255,57 +255,120 @@ export default function RecordScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: GH.bg,
+    backgroundColor: M.bg,
   },
-  mapContainer: {
-    height: '45%',
-    borderBottomWidth: 1,
-    borderBottomColor: GH.border,
+
+  // ── Idle state ─────────────────────────────────────────────────
+  ambientGlow: {
+    position: 'absolute',
+    top: -80,
+    left: -80,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(13,22,60,0.6)',
   },
   idleContainer: {
     flex: 1,
-    alignItems: 'center',
+    paddingHorizontal: 28,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+  },
+  wordmark: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: M.textSecondary,
+    letterSpacing: 0.15,
+    marginBottom: 40,
+  },
+  contextChip: {
+    backgroundColor: 'rgba(28,26,37,0.5)',
+    borderWidth: 1,
+    borderColor: M.border,
+    borderRadius: RADIUS.md,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignSelf: 'flex-start',
+    marginBottom: 32,
+  },
+  contextChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: M.textOnSurface,
+    letterSpacing: 0.025,
+  },
+  headlineBlock: {
+    marginBottom: 48,
+    gap: 20,
   },
   idleTitle: {
-    fontSize: 22,
+    fontSize: 52,
     fontWeight: '700',
-    color: GH.text,
-    marginBottom: 8,
+    color: M.textPrimary,
+    letterSpacing: -1.5,
+    lineHeight: 60,
+  },
+  subtextAccent: {
+    borderLeftWidth: 2,
+    borderLeftColor: 'rgba(187,255,230,0.2)',
+    paddingLeft: 16,
   },
   idleSubtitle: {
-    fontSize: 14,
-    color: GH.muted,
-    marginBottom: 48,
-    textAlign: 'center',
+    fontSize: 18,
+    color: M.textSecondary,
+    lineHeight: 28,
   },
   startButton: {
-    backgroundColor: GH.green,
-    borderRadius: 8,
-    paddingVertical: 18,
-    paddingHorizontal: 80,
-    borderWidth: 1,
-    borderColor: GH.greenBright,
+    backgroundColor: M.teal,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 20,
+    paddingHorizontal: 48,
+    alignSelf: 'flex-start',
+    shadowColor: M.teal,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    elevation: 8,
   },
   startButtonText: {
-    color: '#ffffff',
-    fontSize: 20,
+    color: M.bg,
+    fontSize: 18,
     fontWeight: '700',
-    letterSpacing: 0.3,
+  },
+
+  // ── Active / recording state ────────────────────────────────────
+  mapContainer: {
+    height: '50%',
+  },
+  mapFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+    backgroundColor: 'transparent',
   },
   liveContainer: {
     flexGrow: 1,
-    alignItems: 'center',
-    paddingTop: 24,
-    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingHorizontal: 20,
     paddingBottom: 32,
   },
-  gpsRow: {
+  statusRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  gpsPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
+    gap: 8,
+    backgroundColor: 'rgba(53,51,63,0.5)',
+    borderWidth: 1,
+    borderColor: M.borderFaint,
+    borderRadius: RADIUS.pill,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
   },
   gpsDot: {
     width: 8,
@@ -313,122 +376,135 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   gpsText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
+    color: M.textPrimary,
+    letterSpacing: 0.1,
   },
-  statusBadge: {
-    backgroundColor: GH.greenFaint,
-    borderRadius: 6,
-    paddingVertical: 5,
-    paddingHorizontal: 14,
-    marginBottom: 40,
-    borderWidth: 1,
-    borderColor: GH.green,
+  recBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  statusBadgePaused: {
-    backgroundColor: '#2e1f00',
-    borderColor: GH.yellow,
+  recBadgePaused: {},
+  recDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: M.danger,
   },
-  statusBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: GH.greenBright,
-  },
-  statusBadgeTextPaused: {
-    color: GH.yellow,
+  recText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: M.danger,
+    letterSpacing: 0.1,
   },
   primaryStat: {
-    alignItems: 'center',
-    marginBottom: 40,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 8,
+    marginBottom: 32,
   },
   primaryValue: {
-    fontSize: 56,
+    fontSize: 72,
     fontWeight: '700',
-    color: GH.text,
+    color: M.textPrimary,
     letterSpacing: -2,
+    lineHeight: 72,
     fontVariant: ['tabular-nums'],
   },
-  primaryLabel: {
-    fontSize: 13,
-    color: GH.muted,
-    fontWeight: '500',
-    marginTop: 4,
+  primaryUnit: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: M.textSecondary,
+    letterSpacing: 0.1,
+    marginBottom: 10,
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    justifyContent: 'center',
+    gap: 12,
     width: '100%',
-    marginBottom: 48,
+    marginBottom: 32,
   },
   statTile: {
-    backgroundColor: GH.surface,
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    alignItems: 'center',
+    backgroundColor: M.surface,
+    borderRadius: RADIUS.xl,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    alignItems: 'flex-start',
     minWidth: '45%',
     flex: 1,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.borderFaint,
+    gap: 4,
   },
   statValue: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: '700',
-    color: GH.text,
-    letterSpacing: -0.5,
+    color: M.textPrimary,
     fontVariant: ['tabular-nums'],
   },
   statLabel: {
-    fontSize: 11,
-    color: GH.muted,
-    fontWeight: '500',
-    marginTop: 3,
+    fontSize: 10,
+    color: M.textSecondary,
+    fontWeight: '600',
+    letterSpacing: 0.1,
+    textTransform: 'uppercase',
   },
   controls: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
     width: '100%',
   },
   pauseButton: {
     flex: 1,
-    backgroundColor: GH.surface,
-    borderRadius: 8,
-    paddingVertical: 15,
+    borderRadius: RADIUS.xl,
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   pauseButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: GH.text,
+    fontSize: 14,
+    fontWeight: '600',
+    color: M.textPrimary,
+    letterSpacing: 0.1,
   },
   resumeButton: {
     flex: 1,
-    backgroundColor: GH.greenFaint,
-    borderRadius: 8,
-    paddingVertical: 15,
+    borderRadius: RADIUS.xl,
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: M.tealFaint,
     borderWidth: 1,
-    borderColor: GH.green,
+    borderColor: M.tealBorder,
   },
   resumeButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: GH.greenBright,
+    fontSize: 14,
+    fontWeight: '600',
+    color: M.teal,
+    letterSpacing: 0.1,
   },
   stopButton: {
     flex: 1,
-    backgroundColor: GH.red,
-    borderRadius: 8,
-    paddingVertical: 15,
+    backgroundColor: M.danger,
+    borderRadius: RADIUS.xl,
+    paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: M.danger,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 15,
+    elevation: 6,
   },
   stopButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    color: M.dangerDark,
+    letterSpacing: 0.1,
   },
 });

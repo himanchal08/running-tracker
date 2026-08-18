@@ -9,6 +9,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
+import { M, RADIUS } from '../../constants/theme';
 import { getDb } from '../../db/client';
 import { listActivities } from '../../db/queries/activities';
 import type { Activity } from '../../db/schema';
@@ -37,20 +39,6 @@ import {
   formatSpeed,
 } from '../../features/tracking/utils/formatters';
 
-const GH = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  border: '#30363d',
-  text: '#c9d1d9',
-  muted: '#8b949e',
-  green: '#2ea043',
-  greenBright: '#3fb950',
-  greenFaint: '#0d4a1f',
-  blue: '#58a6ff',
-  red: '#f85149',
-  yellow: '#d29922',
-};
-
 const PERIOD_OPTIONS = ['4 weeks', '12 weeks', '6 months', '1 year'] as const;
 type PeriodOption = typeof PERIOD_OPTIONS[number];
 
@@ -60,9 +48,11 @@ function DeltaBadge({ pct }: { pct: number | null }) {
   if (pct === null) return <Text style={styles.deltaNeutral}>—</Text>;
   const positive = pct >= 0;
   return (
-    <Text style={positive ? styles.deltaUp : styles.deltaDown}>
-      {positive ? '▲' : '▼'} {Math.abs(pct)}%
-    </Text>
+    <View style={styles.deltaBadgeWrap}>
+      <Text style={positive ? styles.deltaUp : styles.deltaDown}>
+        {positive ? '▲' : '▼'} {Math.abs(pct)}%
+      </Text>
+    </View>
   );
 }
 
@@ -77,8 +67,8 @@ function MetricTile({
 }) {
   return (
     <View style={styles.metricTile}>
-      <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue}>{value}</Text>
       <DeltaBadge pct={delta} />
     </View>
   );
@@ -87,18 +77,20 @@ function MetricTile({
 function TrendCard({ trend, periodLabel }: { trend: TrendResult; periodLabel: 'week' | 'month' }) {
   const insight = generateTrendInsight(trend, periodLabel);
   if (!insight) return null;
-  const color = trend.direction === 'up' ? GH.greenBright : GH.red;
+  const color = trend.direction === 'up' ? M.teal : M.danger;
   const arrow = trend.direction === 'up' ? '↑' : '↓';
   return (
     <View style={styles.trendCard}>
-      <Text style={[styles.trendArrow, { color }]}>{arrow}</Text>
+      <View style={[styles.trendIconWrap, { backgroundColor: trend.direction === 'up' ? M.tealFaint : 'rgba(255,180,171,0.1)' }]}>
+        <Text style={[styles.trendArrow, { color }]}>{arrow}</Text>
+      </View>
       <Text style={styles.trendText}>{insight}</Text>
     </View>
   );
 }
 
 function DayBar({ day, count, maxCount }: { day: string; count: number; maxCount: number }) {
-  const barH = maxCount > 0 ? Math.max(4, (count / maxCount) * 60) : 4;
+  const barH = maxCount > 0 ? Math.max(4, (count / maxCount) * 80) : 4;
   return (
     <View style={styles.dayBarContainer}>
       <View style={[styles.dayBar, { height: barH }]} />
@@ -110,6 +102,7 @@ function DayBar({ day, count, maxCount }: { day: string; count: number; maxCount
 
 export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
+  const [fontsLoaded] = useFonts({ PlayfairDisplay_700Bold });
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -128,11 +121,9 @@ export default function InsightsScreen() {
 
   useEffect(() => { load(); }, [load]);
 
-  const weekCount = periodOption === '4 weeks' ? 4 : 12;
   const currentWeekStart = getWeekStart(new Date());
   const selectedWeekStart = new Date(currentWeekStart);
   selectedWeekStart.setDate(currentWeekStart.getDate() - weekOffset * 7);
-  const selectedWeekEnd = getWeekEnd(selectedWeekStart);
 
   const thisWeek = computeWeekStats(activities, selectedWeekStart);
   const prevWeekStart = new Date(selectedWeekStart);
@@ -154,7 +145,6 @@ export default function InsightsScreen() {
 
   const pace = thisWeek.avgPaceSecPerKm;
   const weekLabel = (() => {
-    const now = getWeekStart(new Date());
     if (weekOffset === 0) return 'This week';
     if (weekOffset === 1) return 'Last week';
     return selectedWeekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -167,7 +157,7 @@ export default function InsightsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={GH.greenBright} />
+        <ActivityIndicator size="large" color={M.teal} />
       </View>
     );
   }
@@ -177,30 +167,28 @@ export default function InsightsScreen() {
       style={styles.screen}
       contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 24 }]}
     >
-      <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Lifetime Totals</Text>
+      <Text style={[styles.sectionTitle, { marginBottom: 16 }]}>LIFETIME TOTALS</Text>
       <View style={styles.lifetimeCard}>
         <View style={styles.lifetimeStat}>
-          <Text style={styles.lifetimeValue}>{totalDistanceKm.toFixed(1)}</Text>
+          <Text style={[styles.lifetimeValue, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>{totalDistanceKm.toFixed(1)}</Text>
           <Text style={styles.lifetimeLabel}>Total km</Text>
         </View>
         <View style={styles.lifetimeStat}>
-          <Text style={styles.lifetimeValue}>{totalDurationHours.toFixed(1)}</Text>
+          <Text style={[styles.lifetimeValue, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>{totalDurationHours.toFixed(1)}</Text>
           <Text style={styles.lifetimeLabel}>Total hrs</Text>
         </View>
         <View style={styles.lifetimeStat}>
-          <Text style={styles.lifetimeValue}>{totalActivitiesCount}</Text>
+          <Text style={[styles.lifetimeValue, fontsLoaded && { fontFamily: 'PlayfairDisplay_700Bold' }]}>{totalActivitiesCount}</Text>
           <Text style={styles.lifetimeLabel}>Activities</Text>
         </View>
       </View>
 
-      <View style={[styles.sectionHeader, { marginTop: 16 }]}>
-        <Text style={styles.sectionTitle}>Weekly</Text>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>WEEKLY PROGRESS</Text>
         <View style={styles.weekNav}>
           <TouchableOpacity
             onPress={() => setWeekOffset((o) => o + 1)}
             style={styles.navBtn}
-            accessibilityRole="button"
-            accessibilityLabel="Previous week"
           >
             <Text style={styles.navBtnText}>‹</Text>
           </TouchableOpacity>
@@ -209,8 +197,6 @@ export default function InsightsScreen() {
             onPress={() => setWeekOffset((o) => Math.max(0, o - 1))}
             style={[styles.navBtn, weekOffset === 0 && styles.navBtnDisabled]}
             disabled={weekOffset === 0}
-            accessibilityRole="button"
-            accessibilityLabel="Next week"
           >
             <Text style={[styles.navBtnText, weekOffset === 0 && styles.navBtnTextDisabled]}>›</Text>
           </TouchableOpacity>
@@ -256,8 +242,8 @@ export default function InsightsScreen() {
         </View>
       ) : null}
 
-      <View style={[styles.sectionHeader, { marginTop: 24, marginBottom: 8 }]}>
-        <Text style={styles.sectionTitle}>Trends</Text>
+      <View style={[styles.sectionHeader, { marginBottom: 16 }]}>
+        <Text style={styles.sectionTitle}>TRENDS & INSIGHTS</Text>
       </View>
       <View style={styles.periodToggle}>
         {PERIOD_OPTIONS.map((opt) => (
@@ -265,8 +251,6 @@ export default function InsightsScreen() {
             key={opt}
             style={[styles.periodBtn, periodOption === opt && styles.periodBtnActive]}
             onPress={() => setPeriodOption(opt)}
-            accessibilityRole="button"
-            accessibilityLabel={`Show ${opt} trends`}
           >
             <Text style={[styles.periodBtnText, periodOption === opt && styles.periodBtnTextActive]}>
               {opt}
@@ -287,8 +271,8 @@ export default function InsightsScreen() {
         )}
       </View>
 
-      <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 12 }]}>
-        Most active days
+      <Text style={[styles.sectionTitle, { marginTop: 32, marginBottom: 16 }]}>
+        ACTIVITY FREQUENCY
       </Text>
       <View style={styles.dayBarsRow}>
         {dayDist.map((d) => (
@@ -300,135 +284,139 @@ export default function InsightsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: GH.bg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 16, gap: 12 },
-  lifetimeCard: {
-    flexDirection: 'row',
-    backgroundColor: '#0d1f17',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: GH.green,
-    marginBottom: 8,
-    justifyContent: 'space-around',
-  },
-  lifetimeStat: { alignItems: 'center' },
-  lifetimeValue: { fontSize: 24, fontWeight: '800', color: GH.greenBright, fontVariant: ['tabular-nums'] },
-  lifetimeLabel: { fontSize: 13, color: GH.muted, fontWeight: '600', marginTop: 4, textTransform: 'uppercase' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: M.bgAlt },
+  screen: { flex: 1, backgroundColor: M.bgAlt },
+  content: { padding: 20 },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
+    alignItems: 'flex-end',
+    marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: GH.muted,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontSize: 12,
+    fontWeight: '600',
+    color: M.textSecondary,
+    letterSpacing: 0.1,
   },
-  weekNav: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  navBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: GH.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: GH.surface,
-  },
-  navBtnDisabled: { opacity: 0.3 },
-  navBtnText: { fontSize: 16, color: GH.text, fontWeight: '700' },
-  navBtnTextDisabled: { color: GH.muted },
-  weekLabel: { fontSize: 13, fontWeight: '600', color: GH.text, minWidth: 80, textAlign: 'center' },
-  metricsGrid: {
+  lifetimeCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    backgroundColor: M.card,
+    borderRadius: RADIUS.card,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: M.border,
+    marginBottom: 32,
   },
+  lifetimeStat: { flex: 1, alignItems: 'center' },
+  lifetimeValue: { fontSize: 24, fontWeight: '700', color: M.textPrimary, fontVariant: ['tabular-nums'] },
+  lifetimeLabel: { fontSize: 10, color: M.textSecondary, textTransform: 'uppercase', letterSpacing: 0.05, marginTop: 4 },
+  weekNav: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  navBtn: { padding: 4, paddingHorizontal: 12 },
+  navBtnDisabled: { opacity: 0.3 },
+  navBtnText: { fontSize: 20, color: M.teal, fontWeight: '600' },
+  navBtnTextDisabled: { color: M.textSecondary },
+  weekLabel: { fontSize: 13, fontWeight: '600', color: M.textPrimary, minWidth: 80, textAlign: 'center' },
+  metricsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
   metricTile: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: GH.surface,
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: M.surface,
+    borderRadius: RADIUS.xl,
+    padding: 16,
     borderWidth: 1,
-    borderColor: GH.border,
-    alignItems: 'center',
+    borderColor: M.borderFaint,
+    alignItems: 'flex-start',
     gap: 4,
   },
   metricValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '700',
-    color: GH.text,
+    color: M.textPrimary,
     fontVariant: ['tabular-nums'],
   },
-  metricLabel: { fontSize: 10, color: GH.muted, textTransform: 'uppercase', letterSpacing: 0.3 },
-  deltaUp: { fontSize: 11, color: GH.greenBright, fontWeight: '700' },
-  deltaDown: { fontSize: 11, color: GH.red, fontWeight: '700' },
-  deltaNeutral: { fontSize: 11, color: GH.muted },
+  metricLabel: { fontSize: 10, color: M.textSecondary, textTransform: 'uppercase', letterSpacing: 0.1 },
+  deltaBadgeWrap: {
+    backgroundColor: M.tealFaint,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: M.tealBorder,
+    marginTop: 4,
+  },
+  deltaUp: { fontSize: 10, color: M.teal, fontWeight: '700' },
+  deltaDown: { fontSize: 10, color: M.danger, fontWeight: '700' },
+  deltaNeutral: { fontSize: 10, color: M.textMuted },
   summaryCard: {
-    backgroundColor: GH.greenFaint,
-    borderRadius: 10,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: GH.green,
+    backgroundColor: M.cardMid,
+    borderRadius: RADIUS.card,
+    padding: 20,
+    borderLeftWidth: 3,
+    borderLeftColor: M.teal,
+    marginBottom: 32,
   },
-  summaryText: { color: GH.text, fontSize: 14, lineHeight: 20 },
-  periodToggle: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  summaryText: { color: M.textOnSurface, fontSize: 14, lineHeight: 22, fontStyle: 'italic' },
+  periodToggle: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
   periodBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.pill,
     borderWidth: 1,
-    borderColor: GH.border,
-    backgroundColor: GH.surface,
+    borderColor: 'transparent',
+    backgroundColor: M.surfaceBright,
   },
-  periodBtnActive: { backgroundColor: GH.greenFaint, borderColor: GH.green },
-  periodBtnText: { fontSize: 12, fontWeight: '600', color: GH.muted },
-  periodBtnTextActive: { color: GH.greenBright },
-  trendsContainer: { gap: 8 },
+  periodBtnActive: { backgroundColor: M.tealFaint, borderColor: M.tealBorder },
+  periodBtnText: { fontSize: 12, fontWeight: '600', color: M.textPrimary },
+  periodBtnTextActive: { color: M.teal },
+  trendsContainer: { gap: 12 },
   noTrends: {
-    backgroundColor: GH.surface,
-    borderRadius: 10,
-    padding: 16,
+    backgroundColor: M.surface,
+    borderRadius: RADIUS.card,
+    padding: 24,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.borderFaint,
   },
-  noTrendsText: { color: GH.muted, fontSize: 14, textAlign: 'center' },
+  noTrendsText: { color: M.textSecondary, fontSize: 14, textAlign: 'center' },
   trendCard: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-    backgroundColor: GH.surface,
-    borderRadius: 10,
-    padding: 14,
+    alignItems: 'center',
+    gap: 16,
+    backgroundColor: M.surface,
+    borderRadius: RADIUS.card,
+    padding: 16,
     borderWidth: 1,
-    borderColor: GH.border,
+    borderColor: M.borderFaint,
+    borderLeftWidth: 3,
+    borderLeftColor: M.teal,
   },
-  trendArrow: { fontSize: 18, fontWeight: '700' },
-  trendText: { flex: 1, color: GH.text, fontSize: 14, lineHeight: 20 },
+  trendIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trendArrow: { fontSize: 16, fontWeight: '700' },
+  trendText: { flex: 1, color: M.textPrimary, fontSize: 14, lineHeight: 20 },
   dayBarsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    backgroundColor: GH.surface,
-    borderRadius: 10,
-    padding: 16,
+    backgroundColor: M.card,
+    borderRadius: RADIUS.card,
+    padding: 24,
     borderWidth: 1,
-    borderColor: GH.border,
-    height: 110,
+    borderColor: M.border,
+    height: 140,
   },
-  dayBarContainer: { alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 4 },
+  dayBarContainer: { alignItems: 'center', flex: 1, justifyContent: 'flex-end', gap: 6 },
   dayBar: {
-    width: 16,
-    backgroundColor: GH.greenBright,
-    borderRadius: 3,
+    width: 20,
+    backgroundColor: M.teal,
+    borderRadius: 4,
     minHeight: 4,
   },
-  dayLabel: { fontSize: 10, color: GH.muted, fontWeight: '600' },
-  dayCount: { fontSize: 9, color: GH.muted },
+  dayLabel: { fontSize: 10, color: M.textSecondary, fontWeight: '600' },
+  dayCount: { fontSize: 9, color: M.textMuted },
 });

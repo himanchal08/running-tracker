@@ -73,7 +73,8 @@
             }
           ]
         }
-      ]
+      ],
+      "expo-font"
     ],
     "scheme": "movement-tracker",
     "web": {
