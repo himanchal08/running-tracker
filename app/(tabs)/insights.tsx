@@ -115,6 +115,8 @@ export default function InsightsScreen() {
       const db = getDb();
       const rows = await listActivities(db, { limit: 10000 });
       setActivities(rows);
+    } catch (err) {
+      console.error('[InsightsScreen] Failed to load activities:', err);
     } finally {
       setLoading(false);
     }

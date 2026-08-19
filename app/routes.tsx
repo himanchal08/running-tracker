@@ -89,10 +89,14 @@ export default function RoutesScreen() {
         }),
       );
       setData(withBest.filter((r) => r.route.timesRepeated >= 1));
+    } catch (err) {
+      console.error('[RoutesScreen] Failed to load routes:', err);
+      // Leave data as empty array — empty state is shown rather than crashing
     } finally {
       setLoading(false);
     }
   }, []);
+
 
   useEffect(() => { load(); }, [load]);
 

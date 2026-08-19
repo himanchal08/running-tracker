@@ -62,6 +62,8 @@ export default function GoalsScreen() {
 
       setActiveGoals(progress);
       setStreak(currentStreak);
+    } catch (err) {
+      console.error('[GoalsScreen] Failed to load goals data:', err);
     } finally {
       setLoading(false);
     }

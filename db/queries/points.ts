@@ -1,4 +1,4 @@
-import { eq, asc, and, gte, isNull } from 'drizzle-orm';
+import { eq, asc, and, gte, isNull, count } from 'drizzle-orm';
 import type { Db } from '../client';
 import { points, activities } from '../schema';
 import type { NewPoint, Point, Activity } from '../schema';
@@ -72,9 +72,11 @@ export async function getPointCountForActivity(
   db: Db,
   activityId: string,
 ): Promise<number> {
-  const result = await db
-    .select({ id: points.id })
+  // Use COUNT(*) — avoids loading every column of every row into memory.
+  const [row] = await db
+    .select({ n: count() })
     .from(points)
     .where(eq(points.activityId, activityId));
-  return result.length;
+  return row?.n ?? 0;
 }
+
