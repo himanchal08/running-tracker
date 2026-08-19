@@ -69,6 +69,13 @@ export async function importData(): Promise<boolean> {
     // 1. Gracefully close the live connection before touching the file on disk.
     closeDb();
 
+    // 1.5 Explicitly delete the old file so copyAsync doesn't silently fail.
+    try {
+      await FileSystem.deleteAsync(dbPath, { idempotent: true });
+    } catch (e) {
+      console.warn('Failed to delete old DB, continuing anyway:', e);
+    }
+
     // 2. Overwrite the database file with the selected backup.
     await FileSystem.copyAsync({ from: file.uri, to: dbPath });
 

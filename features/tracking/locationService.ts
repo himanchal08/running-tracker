@@ -120,8 +120,11 @@ export async function handleLocationUpdate(location: Location.LocationObject): P
     liveElapsedTimeS: _pipeline.elapsedTimeS,
     liveElevationGainM: _pipeline.elevationGainM,
     liveGpsAccuracyM: filtered.horizontalAccuracyM,
-    routePoints: [...useRecordingStore.getState().routePoints, [filtered.lon, filtered.lat]],
+    // Use concat instead of spread — avoids copying the entire array on every GPS tick.
+    // Spread [...prev, newPoint] on a 2hr run = ~7200 full array copies = memory leak.
+    routePoints: useRecordingStore.getState().routePoints.concat([[filtered.lon, filtered.lat]]),
   });
+
 
   try {
     const distStr = (_pipeline.cumulativeDistanceM / 1000).toFixed(2);
@@ -222,7 +225,9 @@ export async function pauseRecording(): Promise<void> {
   
   try {
     await notifee.stopForegroundService();
-  } catch (err) {}
+  } catch (err) {
+    console.warn('[locationService] pauseRecording: stopForegroundService failed:', err);
+  }
   
   useRecordingStore.getState().setStatus('paused', _activeActivityId);
 }
@@ -267,12 +272,18 @@ export async function stopRecording(): Promise<void> {
 
   const hasStarted = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
   if (hasStarted) {
-    await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+    try {
+      await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+    } catch (err) {
+      console.warn('Failed to stop location updates, but proceeding to save:', err);
+    }
   }
 
   try {
     await notifee.stopForegroundService();
-  } catch (err) {}
+  } catch (err) {
+    console.warn('[locationService] stopRecording: stopForegroundService failed:', err);
+  }
 
   const db = getDb();
 

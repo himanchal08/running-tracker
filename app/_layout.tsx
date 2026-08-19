@@ -12,6 +12,8 @@ import * as Location from 'expo-location';
 import notifee, { EventType } from '@notifee/react-native';
 import '../features/tracking/backgroundTask';
 import { recoverRecordingState } from '../features/tracking/locationService';
+import { useRecordingStore } from '../store/recordingStore';
+
 
 notifee.onBackgroundEvent(async ({ type, detail }) => {
   // Empty handler to satisfy notifee requirement
@@ -35,19 +37,21 @@ export default function RootLayout() {
       await SplashScreen.hideAsync();
 
       // ── Recording recovery ───────────────────────────────────────────────
-      // If the background location task is still running (app was killed while
-      // recording), re-hydrate the pipeline and store from the DB so the UI
-      // and background task both work correctly again.
+      // If the app was killed while recording, re-hydrate the pipeline and store 
+      // from the DB. If the OS killed the background task entirely, we still recover
+      // the activity but mark it as 'paused' so the user can stop/resume it.
       try {
-        const taskRunning = await Location.hasStartedLocationUpdatesAsync(
-          'BACKGROUND_LOCATION_TASK',
-        );
-        if (taskRunning) {
-          // The most recent unfinished activity (endedAt is null) is the live one.
-          const allActivities = await listActivities(db, { limit: 10 });
-          const liveActivity = allActivities.find((a) => !(a as any).endedAt);
-          if (liveActivity) {
-            await recoverRecordingState(liveActivity.id);
+        const allActivities = await listActivities(db, { limit: 10 });
+        const liveActivity = allActivities.find((a) => !(a as any).endedAt);
+        
+        if (liveActivity) {
+          await recoverRecordingState(liveActivity.id);
+          const taskRunning = await Location.hasStartedLocationUpdatesAsync(
+            'BACKGROUND_LOCATION_TASK',
+          );
+          if (!taskRunning) {
+            // OS killed the background task. Pause it so it's not orphaned.
+            useRecordingStore.getState().setStatus('paused', liveActivity.id);
           }
         }
       } catch (err) {

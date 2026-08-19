@@ -129,10 +129,19 @@ export default function RecordScreen() {
       });
       await startRecording(activityId);
     } catch (err) {
+      // startRecording failed (permission denied, GPS off, etc.).
+      // Delete the orphaned DB row so a dead 0km activity doesn't sit in history.
+      try {
+        const { deleteActivities } = await import('../../db/queries/activities');
+        await deleteActivities(db, [activityId]);
+      } catch (deleteErr) {
+        console.warn('[RecordScreen] Failed to clean up orphaned activity:', deleteErr);
+      }
       Alert.alert('Error', 'Could not start recording. Check location permissions.');
       console.error('[RecordScreen] startRecording failed:', err);
     }
   }, []);
+
 
   const handlePause = useCallback(async () => {
     try { await pauseRecording(); } catch (err) {
