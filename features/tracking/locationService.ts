@@ -10,6 +10,9 @@ import { getBodyWeightKg } from '../settings/userProfile';
 import {
   updateActivityLiveStats,
   finaliseActivity,
+  getActivity,
+  getCurrentStreak,
+  listActivities,
 } from '../../db/queries/activities';
 import {
   getAllRouteCandidates,
@@ -24,6 +27,9 @@ import {
 } from '../routes/routeMatcher';
 import { getBestAttempt } from '../routes/routeAnalytics';
 import { useRecordingStore } from '../../store/recordingStore';
+import { requestWidgetUpdate } from 'react-native-android-widget';
+import { MovementWidget } from '../../widget/Widget';
+import React from 'react';
 
 const LOCATION_TASK_NAME = 'BACKGROUND_LOCATION_TASK';
 
@@ -52,7 +58,23 @@ function computeGpsQualityScore(): number {
 }
 
 export async function handleLocationUpdate(location: Location.LocationObject): Promise<void> {
-  if (!_pipeline || !_activeActivityId) return;
+  // FALLBACK: If we're running headless (app was killed), the pipeline is null.
+  // We must aggressively try to recover the active activity from the DB before dropping the point.
+  if (!_pipeline || !_activeActivityId) {
+    try {
+      const db = getDb();
+      const allActivities = await listActivities(db, { limit: 5 });
+      const liveActivity = allActivities.find((a) => !(a as any).endedAt);
+      if (liveActivity) {
+        await recoverRecordingState(liveActivity.id);
+      }
+    } catch (err) {
+      console.error('[locationService] Headless recovery failed:', err);
+    }
+    
+    // If it's still null after recovery attempt, there is truly no active activity.
+    if (!_pipeline || !_activeActivityId) return;
+  }
 
   _totalRawPoints++;
   const raw = locationToRawPoint(location);
@@ -306,6 +328,71 @@ export async function stopRecording(): Promise<void> {
       console.error('[locationService] runRouteMatching failed:', err);
     }
   }
+
+  // Immediately refresh the widget so streak, distance and heatmap are up-to-date.
+  try {
+    const streakResult = await getCurrentStreak(db);
+    const recentActivities = await listActivities(db, { limit: 1 });
+    await requestWidgetUpdate({
+      widgetName: 'MovementWidget',
+      renderWidget: () =>
+        React.createElement(MovementWidget, {
+          streak: streakResult.current,
+          lastActivity: recentActivities[0] ?? null,
+        }),
+    });
+  } catch (err) {
+    console.warn('[locationService] widget update after stop failed:', err);
+  }
+}
+
+/**
+ * Re-hydrates the in-memory pipeline and activityId from the database so
+ * the background location task continues to function correctly after the app
+ * is killed and reopened (or opened via the widget).
+ *
+ * Call this on app launch whenever `Location.hasStartedLocationUpdatesAsync`
+ * returns true but `_activeActivityId` is null.
+ */
+export async function recoverRecordingState(activityId: string): Promise<void> {
+  if (_pipeline && _activeActivityId === activityId) return; // Already recovered
+
+  const db = getDb();
+  const activity = await getActivity(db, activityId);
+  if (!activity) {
+    console.warn('[locationService] recoverRecordingState: activity not found', activityId);
+    return;
+  }
+
+  // Recreate the pipeline and seed it with persisted cumulative stats so that
+  // distance/elevation continue from where they left off instead of starting at 0.
+  _pipeline = new IngestionPipeline(DEFAULT_INGESTION_CONFIG);
+  _pipeline.restoreState({
+    cumulativeDistanceM: activity.distanceM,
+    movingTimeS: activity.movingTimeS,
+    elapsedTimeS: activity.elapsedTimeS,
+    elevationGainM: activity.elevationGainM,
+    elevationLossM: activity.elevationLossM ?? 0,
+  });
+  _activeActivityId = activityId;
+
+  // Re-seed the in-memory GPS quality counters from DB point counts.
+  const pts = await getPointsForActivity(db, activityId);
+  _totalRawPoints = pts.length;
+  _acceptedPoints = pts.filter((p) => !p.isFilteredOutlier).length;
+
+  // Restore the Zustand store so the UI shows the correct live stats.
+  useRecordingStore.getState().setStatus('recording', activityId);
+  useRecordingStore.getState().setLiveStats({
+    liveDistanceM: activity.distanceM,
+    liveMovingTimeS: activity.movingTimeS,
+    liveElapsedTimeS: activity.elapsedTimeS,
+    liveElevationGainM: activity.elevationGainM,
+    liveGpsAccuracyM: null,
+    routePoints: pts.map((p) => [p.lon, p.lat] as [number, number]),
+  });
+
+  console.log('[locationService] Recording state recovered for activity:', activityId);
 }
 
 async function runRouteMatching(db: ReturnType<typeof getDb>, activityId: string): Promise<void> {

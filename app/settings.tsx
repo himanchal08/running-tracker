@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { exportData, importData } from '../features/settings/dataManager';
 import { getBodyWeightKg, setBodyWeightKg } from '../features/settings/userProfile';
+import { useRecordingStore } from '../store/recordingStore';
 
 import { M, RADIUS } from '../constants/theme';
 
@@ -41,6 +42,13 @@ export default function SettingsScreen() {
   };
 
   const handleImport = async () => {
+    // FALLBACK: Never allow import if an activity is actively being tracked.
+    const isRecording = useRecordingStore.getState().status === 'recording' || useRecordingStore.getState().status === 'paused';
+    if (isRecording) {
+      Alert.alert('Cannot Import', 'Please stop and save your current activity before importing a database.');
+      return;
+    }
+
     Alert.alert(
       'Warning: Overwrite Data',
       'Importing a backup will completely overwrite your current database. This cannot be undone. Do you want to proceed?',
@@ -54,17 +62,18 @@ export default function SettingsScreen() {
             const success = await importData();
             setLoading(false);
             if (success) {
-              Alert.alert('Success', 'Backup restored successfully. Please restart the app for changes to take effect.', [
-                { text: 'OK', onPress: () => router.push('/(tabs)' as any) }
+              Alert.alert('Restored', 'Backup restored successfully.', [
+                { text: 'View History', onPress: () => router.replace('/(tabs)/history' as any) }
               ]);
             } else {
-              Alert.alert('Import Failed', 'Could not restore backup.');
+              Alert.alert('Import Failed', 'Could not restore backup. Your existing data is unchanged.');
             }
           }
         }
       ]
     );
   };
+
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>

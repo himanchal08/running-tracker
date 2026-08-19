@@ -89,14 +89,21 @@ export default function RecordScreen() {
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
     if (status === 'recording') {
+      // Capture the elapsed time at the moment we start ticking so that if
+      // the app was reopened mid-recording (store was recovered from DB), we
+      // continue from the correct value instead of always incrementing from 0.
+      const baseElapsed = useRecordingStore.getState().liveElapsedTimeS;
+      const startedAt = Date.now();
       interval = setInterval(() => {
-        useRecordingStore.setState((s) => ({
-          liveElapsedTimeS: s.liveElapsedTimeS + 1,
-        }));
+        const secondsElapsed = Math.floor((Date.now() - startedAt) / 1000);
+        useRecordingStore.setState({
+          liveElapsedTimeS: baseElapsed + secondsElapsed,
+        });
       }, 1000);
     }
     return () => clearInterval(interval);
   }, [status]);
+
 
   const handleStart = useCallback(async () => {
     try {

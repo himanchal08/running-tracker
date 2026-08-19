@@ -1,9 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import { getDb } from '../../db/client';
+import { getDb, closeDb, reopenDb } from '../../db/client';
 import { listActivities } from '../../db/queries/activities';
-import type { Db } from '../../db/client';
 import { Platform } from 'react-native';
 import { ANDROID_DATABASE_PATH, IOS_LIBRARY_PATH } from '@op-engineering/op-sqlite';
 
@@ -18,10 +17,10 @@ function getDbPath(): string {
 export async function exportData(): Promise<boolean> {
   try {
     const db = getDb();
-    const activities = await listActivities(db, { limit: 10000 });
-    
+    await listActivities(db, { limit: 10000 });
+
     const dbPath = getDbPath();
-    
+
     const exists = await FileSystem.getInfoAsync(dbPath);
     if (!exists.exists) {
       console.warn('Database file not found at:', dbPath);
@@ -67,11 +66,20 @@ export async function importData(): Promise<boolean> {
 
     const dbPath = getDbPath();
 
+    // 1. Gracefully close the live connection before touching the file on disk.
+    closeDb();
+
+    // 2. Overwrite the database file with the selected backup.
     await FileSystem.copyAsync({ from: file.uri, to: dbPath });
-    
+
+    // 3. Re-open the connection immediately — migrations run, new data is live.
+    reopenDb();
+
     return true;
   } catch (err) {
     console.error('Import failed:', err);
+    // Always ensure a working DB connection is restored, even on failure.
+    try { reopenDb(); } catch (_) {}
     return false;
   }
 }

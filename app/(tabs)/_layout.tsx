@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { M, RADIUS } from '../../constants/theme';
 
 // ─── Custom Icons ──────────────────────────────────────────────────────────
@@ -60,12 +61,19 @@ function GoalsIcon({ color }: { color: ColorValue }) {
 // ─── Layout ────────────────────────────────────────────────────────────────
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
+  // The tab bar must clear the system navigation bar (home indicator / nav buttons).
+  // We add the bottom inset to both the height and the bottom padding so content
+  // is never hidden behind the gesture bar or 3-button navigation row.
+  const tabBarHeight = 60 + insets.bottom;
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: M.teal,
         tabBarInactiveTintColor: M.textSecondary,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { height: tabBarHeight, paddingBottom: insets.bottom + 8 }],
         tabBarLabelStyle: styles.tabLabel,
         headerShown: false,
       }}
@@ -117,11 +125,10 @@ const styles = StyleSheet.create({
     backgroundColor: M.surface,
     borderTopWidth: 1,
     borderTopColor: M.borderFaint,
-    height: 60,
+    // height & paddingBottom are set dynamically in TabLayout using insets
     elevation: 0,
     shadowOpacity: 0,
     paddingTop: 8,
-    paddingBottom: 8,
   },
   tabLabel: {
     fontSize: 10,

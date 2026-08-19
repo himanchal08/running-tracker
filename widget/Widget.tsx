@@ -19,7 +19,7 @@ export function MovementWidget({ streak = 0, lastActivity }: { streak?: number, 
   return (
     <FlexWidget
       clickAction="OPEN_URI"
-      clickActionData={{ uri: 'movement-tracker://goals?showStreak=true' }}
+      clickActionData={{ uri: 'movement-tracker://record' }}
       style={{
         height: 'match_parent',
         width: 'match_parent',

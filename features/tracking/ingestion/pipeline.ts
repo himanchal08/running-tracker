@@ -32,6 +32,24 @@ export class IngestionPipeline {
     resetElevationBuffer();
   }
 
+  /**
+   * Seeds cumulative stats from persisted DB values so that after an app restart
+   * the pipeline continues accumulating from the correct baseline.
+   */
+  restoreState(state: {
+    cumulativeDistanceM: number;
+    movingTimeS: number;
+    elapsedTimeS: number;
+    elevationGainM: number;
+    elevationLossM: number;
+  }): void {
+    this.cumulativeDistanceM = state.cumulativeDistanceM;
+    this.movingTimeS = state.movingTimeS;
+    this.elapsedTimeS = state.elapsedTimeS;
+    this.elevationGainM = state.elevationGainM;
+    this.elevationLossM = state.elevationLossM;
+  }
+
   process(raw: RawPoint): FilteredPoint | null {
     if (!passesAccuracyFilter(raw, this.config.maxHorizontalAccuracyM)) {
       return null;

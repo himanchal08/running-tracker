@@ -8,8 +8,10 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { getDb } from '../db/client';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Location from 'expo-location';
 import notifee, { EventType } from '@notifee/react-native';
 import '../features/tracking/backgroundTask';
+import { recoverRecordingState } from '../features/tracking/locationService';
 
 notifee.onBackgroundEvent(async ({ type, detail }) => {
   // Empty handler to satisfy notifee requirement
@@ -28,16 +30,34 @@ export default function RootLayout() {
 
   useEffect(() => {
     const init = async () => {
-      await getDb();
+      const db = await getDb();
       setDbReady(true);
       await SplashScreen.hideAsync();
-      
-      // Force update the widget when the app opens
+
+      // ── Recording recovery ───────────────────────────────────────────────
+      // If the background location task is still running (app was killed while
+      // recording), re-hydrate the pipeline and store from the DB so the UI
+      // and background task both work correctly again.
       try {
-        const db = getDb();
+        const taskRunning = await Location.hasStartedLocationUpdatesAsync(
+          'BACKGROUND_LOCATION_TASK',
+        );
+        if (taskRunning) {
+          // The most recent unfinished activity (endedAt is null) is the live one.
+          const allActivities = await listActivities(db, { limit: 10 });
+          const liveActivity = allActivities.find((a) => !(a as any).endedAt);
+          if (liveActivity) {
+            await recoverRecordingState(liveActivity.id);
+          }
+        }
+      } catch (err) {
+        console.warn('[_layout] Recording recovery check failed:', err);
+      }
+
+      // ── Widget refresh ───────────────────────────────────────────────────
+      try {
         const streakResult = await getCurrentStreak(db);
         const activities = await listActivities(db, { limit: 1 });
-        
         await requestWidgetUpdate({
           widgetName: 'MovementWidget',
           renderWidget: () => <MovementWidget streak={streakResult.current} lastActivity={activities[0]} />,
@@ -48,6 +68,7 @@ export default function RootLayout() {
     };
     init();
   }, []);
+
 
   if (!dbReady) {
     return null;
